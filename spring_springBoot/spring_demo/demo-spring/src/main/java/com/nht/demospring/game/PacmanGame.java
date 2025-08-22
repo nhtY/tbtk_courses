@@ -1,5 +1,10 @@
 package com.nht.demospring.game;
 
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
+
+@Component
+@Qualifier("PacmanGame")
 public class PacmanGame implements GameConsole {
 
     @Override

@@ -312,10 +312,267 @@ public Repository myRepo(@Qualifier(mongoQualifier) DbConnection dbConnection) {
 * Spring nesneleri yönetiyor ve birbirine bağlıyor (auto-wiring) ama nesneleri biz kodla oluşturmuyor muyduk? Spring nesneleri bizim yerimize nasıl oluşturuyor?
 
 
-### Şunlara da bak
-beanFActory vs Application context:
-https://www.baeldung.com/spring-beanfactory-vs-applicationcontext
+* BeanFactory vs ApplicationContext:
 
-Default scope of a spring bean?
+> BeanFactory loads beans on-demand, while ApplicationContext loads all beans at startup. Thus, BeanFactory is lightweight as compared to ApplicationContext. kaynak: https://www.baeldung.com/spring-beanfactory-vs-applicationcontext
+
+* Default scope of a spring bean?
+
+The Singleton scope is the default scope in Spring. In this scope, the Spring container creates a single instance of the bean, and this instance is shared across the entire application.
+
+--- 
+
+## Section 7-8
+
+### @Component
+Class'ların instance'larını bir konfigurasyon class'ı içinde metotlarla tanımlamak yerine Spring'in otomarik olarak oluşturmasını sağlayabiliriz.
+
+*@Component* annotasyonu ile işaretlenen class uygulamamızın bir komponent'idir. Yani Spring'in annotasyon bazlı konfigurasyonu ve classpath taraması için bir aday class olurlar.
+
+Yani Spring'in bir class'ın instacance'ını bizim yerimize otomatik oluşturmasını istersek o class'ı @Component ile işaretleriz.
+
+Önce:
+```java
+public class PacmanGame implements GamingConsole {
+	// ... some methods
+}
 
 
+@Configuration
+public class GameConfig {
+
+	@Bean 
+	public GamingConsole pacman() {
+		return new PacmanGame();
+	}
+
+	@Bean 
+	public GameRunner(GamingConsole pacman) {
+		return new GameRunner(pacman);
+	}
+}
+
+public class Main {
+	public static void main(String[] args) {
+		var context = new AnnotationConfigApplicationContext(GameConfig.class);
+
+		var gameRuner = context.getBean(GameRunner.class);
+		gameRunner.run();
+	}
+}
+```
+
+Sonra:
+```java
+@Component
+public class PacmanGame implements GamingConsole {
+	// ... some methods
+}
+
+
+@Configuration
+@ComponentScan
+public class GameConfig {
+
+	@Bean 
+	public GameRunner(GamingConsole pacman) {
+		return new GameRunner(pacman);
+	}
+}
+
+public class Main {
+	public static void main(String[] args) {
+		var context = new AnnotationConfigApplicationContext(GameConfig.class);
+
+		var gameRuner = context.getBean(GameRunner.class);
+		gameRunner.run();
+	}
+}
+```
+
+PacmanGame class'ı @Component olarak işaretlendi ve böylece instance oluşturma işi spring'e verildi. Ancak uygulama içindeki component'leri nerede bulacağını @ComponentScan ile Spring'e söylemezsek 'NoSuchBeanDefinitionException' alırdık.
+
+@ComponentScan herhangi bir parametre verilmezse kullanıldıği package ve altındaki yerlerde Component'leri arar. Parametreler vererek birden fazla package'a bakmasını ve bazen de bakmaması gereken konumları belirtebiliriz.
+
+* Kodu Main class'ında toplayalım:
+
+```java
+@Component
+public class PacmanGame implements GamingConsole {
+	// ... some methods
+}
+
+@Configuration
+@ComponentScan
+public class Main {
+
+	@Bean 
+	public GameRunner(GamingConsole pacman) {
+		return new GameRunner(pacman);
+	}
+
+	public static void main(String[] args) {
+		var context = new AnnotationConfigApplicationContext(Main.class);
+
+		var gameRuner = context.getBean(GameRunner.class);
+		gameRunner.run();
+	}
+}
+```
+
+Artık konfigurasyonu Main içinde yaptığımızdan Context'i Maindeki yapılandırmaya göre hazırlıyoruz. Böylece daha az class yazdık denebilir.
+
+* Şimdi GameRunner'ı da @Component ile oluşturalım:
+```java
+@Component
+public class PacmanGame implements GamingConsole {
+	// ... some methods
+}
+
+@Component
+public class GameRunner {
+	private GamingConsole game;
+
+	public GameRunner(GamingConsole game) {
+		this.game = game;
+	}
+
+	// ... some methods
+}
+
+@Configuration
+@ComponentScan
+public class Main {
+
+	public static void main(String[] args) {
+		var context = new AnnotationConfigApplicationContext(Main.class);
+
+		var gameRuner = context.getBean(GameRunner.class);
+		gameRunner.run();
+	}
+}
+```
+
+Böylece Spring class'larımız için hem instance oluşturdu hem de bağımlılılarını yönetti.
+
+### @Component ile işaretli aynı türden birden fazla class varsa ve inject edilmesi gerekiyorsa
+Böyle bir durumda spring bize 'NoUniqueBeanDefinitionException' hatasını firlatacaktır. Çünkü o türden oluşturulmuş hangi instance'ı kullanmak/inject etmek istediğin belirsiz.
+
+Örneğin:
+```java
+@Component
+public class PacmanGame implements GamingConsole {
+	// ... some methods
+}
+
+@Component
+public class MarioGame implements GamingConsole {
+	// ... some methods
+}
+
+@Component
+public class GameRunner {
+	private GamingConsole game;
+
+	public GameRunner(GamingConsole game) {
+		this.game = game;
+	}
+
+	// ... some methods
+}
+
+@Configuration
+@ComponentScan
+public class Main {
+
+	public static void main(String[] args) {
+		var context = new AnnotationConfigApplicationContext(Main.class);
+
+		var gameRuner = context.getBean(GameRunner.class);
+		gameRunner.run();
+	}
+}
+```
+
+* Hatırlayalım: bu gibi durumlarda @Primary ya da @Qualifier gibi annotasyonlar kullanarak Spring'e hangi bean'ı getirmesi gerektiği söylenebilir.
+
+Öyleyse MarioGame'i @Primary ile işaretleyelim:
+
+```java
+@Component
+public class PacmanGame implements GamingConsole {
+	// ... some methods
+}
+
+@Component
+@Primary
+public class MarioGame implements GamingConsole {
+	// ... some methods
+}
+
+@Component
+public class GameRunner {
+	private GamingConsole game;
+
+	public GameRunner(GamingConsole game) {
+		this.game = game;
+	}
+
+	// ... some methods
+}
+
+@Configuration
+@ComponentScan
+public class Main {
+
+	public static void main(String[] args) {
+		var context = new AnnotationConfigApplicationContext(Main.class);
+
+		var gameRuner = context.getBean(GameRunner.class);
+		gameRunner.run();
+	}
+}
+```
+
+GameRunner'ın ihtiyacı olan GamingConsole türünden bean artık MarioGame olarak verilir. Çünkü spring'e GamingConsole türünden aday bean'lardan hangisnin öncelikli olarak kullanılacağı @Primary ile söylendi.
+
+* @Qualifier ile istediğimiz Bean'ı kullanalım:
+
+```java
+@Component
+@Qualifier("PacmanGameQualifier")
+public class PacmanGame implements GamingConsole {
+	// ... some methods
+}
+
+@Component
+@Primary
+public class MarioGame implements GamingConsole {
+	// ... some methods
+}
+
+@Component
+public class GameRunner {
+	private GamingConsole game;
+
+	public GameRunner(@Qualifier("PacmanGameQualifier") GamingConsole game) {
+		this.game = game;
+	}
+
+	// ... some methods
+}
+
+@Configuration
+@ComponentScan
+public class Main {
+
+	public static void main(String[] args) {
+		var context = new AnnotationConfigApplicationContext(Main.class);
+
+		var gameRuner = context.getBean(GameRunner.class);
+		gameRunner.run();
+	}
+}
+```
+
+Spring @Qualifier("PacmanGameQualifier") ile işaretlenmiş class'ın instance'ını GameRunner'a verir ve böylece PacmanGame kullanılır.
