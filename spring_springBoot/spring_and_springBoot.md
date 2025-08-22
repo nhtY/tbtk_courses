@@ -576,3 +576,34 @@ public class Main {
 ```
 
 Spring @Qualifier("PacmanGameQualifier") ile işaretlenmiş class'ın instance'ını GameRunner'a verir ve böylece PacmanGame kullanılır.
+
+> Diyelim ki bir A class'ını @Qualifier ile işaretlemedik ancak onu B class'ında kullanacağız. Diğer adaylardan ayrıştırmak için A class'ına qualifier verilmese bile B içinde class adıyla belirtilebilir:
+```java
+public class A implements MyType {
+
+}
+
+@Primary
+public class X implements MyType {
+
+}
+
+@ComponentScan
+@Qualifier("qualifierY")
+public class Y implements MyType {
+
+}
+
+@Component
+public class B {
+	private MyType dependency;
+
+	public B(@Qualifier("A") MyType dependency) {
+		this.dependency = dependency;
+	}
+}
+```
+
+---
+
+### Dependency Injection Türleri
