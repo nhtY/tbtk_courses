@@ -579,6 +579,7 @@ Spring @Qualifier("PacmanGameQualifier") ile işaretlenmiş class'ın instance'�
 
 > Diyelim ki bir A class'ını @Qualifier ile işaretlemedik ancak onu B class'ında kullanacağız. Diğer adaylardan ayrıştırmak için A class'ına qualifier verilmese bile B içinde class adıyla belirtilebilir:
 ```java
+@Component
 public class A implements MyType {
 
 }
