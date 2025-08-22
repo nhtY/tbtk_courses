@@ -584,12 +584,13 @@ public class A implements MyType {
 
 }
 
+@Component
 @Primary
 public class X implements MyType {
 
 }
 
-@ComponentScan
+@Component
 @Qualifier("qualifierY")
 public class Y implements MyType {
 
