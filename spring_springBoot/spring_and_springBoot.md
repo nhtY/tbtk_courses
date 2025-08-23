@@ -1044,8 +1044,7 @@ Yani aynı JVM'de birden fazla Spring IoC Container çalıştırırsak, Spring S
 | Default      | NOT Default                                                               | Default                                                          |
 | Code Snippet | `@Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)`                 | `@Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)` OR Default |
 | Usage        | Rarely used                                                               | Very frequently used                                             |
-| Recommended  | Stateful beans                                                            | Stateless beans                                                  |
-| Scenario     | Stateful beans                                                            | Stateless beans                                                  |
+| Recommended Scenario  | Stateful beans                                                            | Stateless beans                                         |
 
 Statefull'a örnek olarak uygulamanın kullanıcı bilgileri olabilir. Eğer kullanıcı bilgilerini tutan bir nesne varsa onun tüm uygulamada kullanılmasını istemeyiz ve her kullanıcı için kullanıcı bilgisini tutan yeni bir instance'a ihtiyaç duyarız. Dolayısıyla bilgide devamlılık aranıyorsa Prototype kullanılabilir.
 
