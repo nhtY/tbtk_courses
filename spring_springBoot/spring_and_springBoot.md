@@ -805,3 +805,153 @@ BusinessService{dependency1=com.nht.dependencyinjection.example.e3.Dependency1@7
 | Autowiring | Yes; Field, Setter, Constructor injection | Yes; method call or method parameters |
 | Who creates beans? | Spring Framework | Spring Framework, but you write the creation code |
 | Recommended for | Instantiating Beans for your own application code: @Component | 1- Custom Business Logic. 2- Instantiating Beans from 3rd party libraries @Ban |
+
+---
+
+## Section 9
+
+### Lazy Initialization vs Eager Intialization
+Spring @Component ile işaretlenmiş herhangi bir class'ın instance'ını varsayılan olarak Application context başladığında oluşturur. Tüm bean'lar varsayılan olarak uygulama ayağa kalkerken initialize edildiğinden bazen initialize edilmesi uzun sürebilecek bean'ları ilk kullanıldıkları anda oluşturmak isteyebiliriz. Bunun için elimizde @Lazy annotasyonu var.
+
+@Lazy, @Component ile işaretlenmiş class ya da @Bean ile işaretlenmiş metotlarla kullanılabilir.
+
+> Lazy olarak initialize edilecek bean'ın yerine **Proxy** bir obje oluşturulur. Bu mekanizmanın temel mantığı şöyle çalışır:
+
+Bir bean'i @Lazy anotasyonu ile işaretlediğinizde, Spring bu bean'i uygulamanın başlangıcında (startup) oluşturmaz. Bunun yerine, ilgili bean'e ihtiyaç duyulduğu an (yani bir metot çağrısı yapıldığında) gerçek bean'i oluşturan bir proxy objesi enjekte eder. Bu proxy, gerçek bean'in vekilidir.
+
+Siz bu proxy üzerinden herhangi bir metot çağırdığınızda, proxy ilk olarak gerçek bean'in henüz oluşturulup oluşturulmadığını kontrol eder. Eğer bean oluşturulmamışsa, onu o anda oluşturur ve metodu bu yeni oluşturulan gerçek bean üzerinde çağırır. Böylece, başlangıç süresini kısaltmış olur ve belleği daha verimli kullanırsınız.
+
+Örnek, varsayılan EAGER:
+
+```java
+@Component
+public class SomeDependency {
+
+}
+
+@Component
+public class TakesTooLongToInitialize {
+	SomeDependency someDependency;
+
+	public TakesTooLongToInitialize(SomeDependency someDependency) {
+		System.out.println("TakesTooLongToInitialize: Initializing...");
+		// some inititalization logic here ...
+		this.someDependency = someDependency;
+	}
+
+	public void doSomething() {
+		System.out.println("Doing something...")
+	}
+}
+
+
+@Configuration
+@ComponentScan
+public class InitializationExample {
+
+    public static void main(String[] args) {
+        try (var context = new AnnotationConfigApplicationContext(InitializationExample.class)) {
+
+        	  System.out.println("Context initialized successfully.");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+Bean'lar uygulama ayağa kalkarken oluşturulur ve hepsi hazır olunca context de hazırdır.
+
+```bash
+TakesTooLongToInitialize: Initializing...
+Context initialized successfully.
+ ```
+
+ Örnek, LAZY
+
+ ```java
+@Component
+public class SomeDependency {
+
+}
+
+@Component
+@Lazy
+public class TakesTooLongToInitialize {
+	SomeDependency someDependency;
+
+	public TakesTooLongToInitialize(SomeDependency someDependency) {
+		// some inititalization logic here ...
+		this.someDependency = someDependency;
+	}
+
+	public void doSomething() {
+		System.out.println("Doing something...");
+	}
+}
+
+
+@Configuration
+@ComponentScan
+public class InitializationExample {
+
+    public static void main(String[] args) {
+        try (var context = new AnnotationConfigApplicationContext(InitializationExample.class)) {
+
+        	  System.out.println("Context initialized successfully.");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+TakesTooLongToInitialize class'ı @Lazy ile işaretlendiğinden kullanılacağı zaman oluşturulur. Dolayısıyla çıktıda initilize edildiğine dair bir şey yazmadı:
+```bash
+Context initialized successfully.
+```
+
+Şimdi @Lazy ile işaretli class'ı kullanalım:
+```java
+@Configuration
+@ComponentScan
+public class InitializationExample {
+
+    public static void main(String[] args) {
+        try (var context = new AnnotationConfigApplicationContext(InitializationExample.class)) {
+
+        	  System.out.println("Context initialized successfully.");
+
+        	  var myBean = context.getBean(TakesTooLongToInitialize.class);
+        	  myBean.doSomething();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+Artık o bean'a erişmek istediğimizden initialize edilir ve instance'ını kullanabiliriz. Önce application context oluşur ve ardından eriştiğimiz bean initialize edilir.
+```bash
+Context initialized successfully.
+TakesTooLongToInitialize: Initializing...
+Doing something...
+```
+
+* Eager vs Lazy initialization karşılaştırma:
+
+| Özellik | Lazy | Eager |
+| --- | --- | --- |
+| Initialization Time | Bean initialized when it is first made use of in the application | Bean is initialized at the startup of the application |
+| Deafault | NOT Default | Default |
+| Code Snippet | @Lazy or @Lazy(value=true) | @Lazy(value=false) or Absance of the annotation |
+| Error while initializing | Errors will result in runtime exception | Errors will prevent application from starting up |
+| Usage | Rarely | Frequently |
+| Memory Consumption | Less(until bean is initialized) | More, all beans are initialized at startup |
+| Recommended Scenario | Beans very rarely used in your app | most of your beans |
+
+
+Eğer eager ise uygulama ayağa kalkarken bean oluşturulamazsa hata alınır ve process sonlanır. Ama lazy ise adece exception fırlatılır ve process kaldığı yerden devam eder, eğer bu durum başka hatalara neden olmazsa.
