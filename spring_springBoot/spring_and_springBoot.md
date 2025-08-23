@@ -609,3 +609,199 @@ public class B {
 ---
 
 ### Dependency Injection Türleri
+3 tür vardır: Constructor based, Setter based ve Field.
+
+* Constructor-based: Dependencies are set by craeting the Bean using its Constructor.
+
+* Setter-based: Dependencies are set by calling setter methods on your behalf.
+
+* Field: No setter or constructor. Dependency is injected using *reflection*.
+
+**Field Injection**: reflection ile bağımlılıkların Spring tarafından oluşturulup ilgili class'a verildiği tür.
+
+Örnek:
+```java
+@Component
+class BusinessService {
+    Dependency1 dependency1;
+    Dependency2 dependency2;
+
+    public String toString() {
+        return "BusinessService{" +
+                "dependency1=" + dependency1 +
+                ", dependency2=" + dependency2 +
+                '}';
+    }
+}
+
+@Component
+class Dependency1 {
+    // Simulating a dependency
+}
+
+@Component
+class Dependency2 {
+    // Simulating another dependency
+}
+
+
+@Configuration
+@ComponentScan
+public class FieldInjectionExample {
+
+    public static void main(String[] args) {
+        try (var context = new AnnotationConfigApplicationContext(FieldInjectionExample.class)) {
+            Arrays.stream(context.getBeanDefinitionNames())
+                    .forEach(System.out::println);
+
+            BusinessService businessService = context.getBean(BusinessService.class);
+            System.out.println(businessService);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+Bu Örnekte çıktı olarak @Component ile işaretlenmiş class'lar için Bean oluşturulduğunu görürüz ancak BusinessService'in toString metodu çağrılınca bağımlılılarının null olduğunu görürüz:
+
+```bash
+fieldInjectionExample
+businessService
+dependency1
+dependency2
+BusinessService{dependency1=null, dependency2=null}
+```
+
+* @Autowired annotasyonu ile Spring'e bu bağımlılıkları ilgili class'a inject etmesi gerektiği söylenmeli:
+
+```java
+@Component
+class BusinessService {
+    @Autowired
+    Dependency1 dependency1;
+
+    @Autowired
+    Dependency2 dependency2;
+
+    public String toString() {
+        return "BusinessService{" +
+                "dependency1=" + dependency1 +
+                ", dependency2=" + dependency2 +
+                '}';
+    }
+}
+
+```
+
+Bunun sonucunda çıktımız şöyle görünecektir:
+```bash
+fieldInjectionExample
+businessService
+dependency1
+dependency2
+BusinessService{dependency1=com.nht.dependencyinjection.exapmle.e1.Dependency1@3cd3e762, dependency2=com.nht.dependencyinjection.exapmle.e1.Dependency2@1fa121e2}
+
+```
+
+**Setter Injection**: Spring'e bizim yazdığımız setter metotlarını kullanarak bağımlılıkları inject etmsini söyleyeceğiz:
+
+Örneğin
+```java
+@Component
+class BusinessService {
+    Dependency1 dependency1;
+    Dependency2 dependency2;
+
+    @Autowired
+    public void setDependency1(Dependency1 dependency1) {
+        this.dependency1 = dependency1;
+    }
+
+    @Autowired
+    public void setDependency2(Dependency2 dependency2) {
+        this.dependency2 = dependency2;
+    }
+
+    public String toString() {
+        return "BusinessService{" +
+                "dependency1=" + dependency1 +
+                ", dependency2=" + dependency2 +
+                '}';
+    }
+}
+```
+
+Burada setter metotları @Autowired ile işaretlenmeseydi Spring injection'ı yapamazdı ve toString kısmında bağımlılıklar null görünecekti. Biz @Autowired kullandık ve çıktımız:
+
+```bash
+setterInjectionExample
+businessService
+dependency1
+dependency2
+BusinessService{dependency1=com.nht.dependencyinjection.example.e2.Dependency1@131ef10, dependency2=com.nht.dependencyinjection.example.e2.Dependency2@55b0dcab}
+```
+
+**Constructor Injection** Spring ilgili class'ın Constructor'ında gördüğü bağımlılıkları auto-wire eder/inject eder. Constuctor yardımıyla injection yapılırken @Autowired kullanmasak bile Spring bunu anlar ve kendi yapar.
+
+```java
+@Component
+class BusinessService {
+    Dependency1 dependency1;
+    Dependency2 dependency2;
+
+    public BusinessService(Dependency1 dependency1, Dependency2 dependency2) {
+        this.dependency1 = dependency1;
+        this.dependency2 = dependency2;
+    }
+
+    public String toString() {
+        return "BusinessService{" +
+                "dependency1=" + dependency1 +
+                ", dependency2=" + dependency2 +
+                '}';
+    }
+}
+```
+
+@Autowired kullanmadık ama kullanabilirdik.
+
+Çıkıtısı:
+```bash
+constructorInjectionExample
+businessService
+dependency1
+dependency2
+BusinessService{dependency1=com.nht.dependencyinjection.example.e3.Dependency1@7eac9008, dependency2=com.nht.dependencyinjection.example.e3.Dependency2@4116aac9}
+```
+
+> Hangi tür injection kullanılmalı? Cevap constructor-based injection. Çünkü tek bit metotta class initialize ediliriken bağımlılıklarına sahip olur ve böylece kullanıma hazırdır.
+
+---
+### Terminoloji
+
+* @Component: Bir class'ın nesnesidir ve Springframework tarafından yönetilir.
+
+* Dependency: Bir class'ın ihtiyaç duyduğu diğer class. Eğer interface olarak tanımlandıysa, o türden bir implementastona ihtiyaç duyar.
+
+* Component Scan: @Component ile işaretlenmiş class'ları tanımlandıkları paketlerde bulabilmesi için Spring'e yardımcı oluyoruz. Mesela @ComponentScan(com.nht.myproject). varsayılan olarak @ComponentScan annotasyonuyla işaretlenmiş class'ın bulunduğu paket ve altındaki paketleri tarar.
+
+* Dependency Injection: Bean'ları tanıyıp ihtiyaç duydukları bağımlılıkları onlara oluşturup vermektir. İhtiyaç duyulan bağılılıkların oluşturulması ve bağlanması/ilgili class'a verilmesi işi framework tarafından yapılınca buna Inversion Of Control (IoC) diyoruz. Yani bu süreçte kontrol framework'tedir.
+
+* Spring Beans: Yaşam döngüsü Spring Framework taradından yönetilen herhangi bir class'ın herhangi bir instance'ı.
+
+* IoC container: Bean'ların yaşam döngüsü ve bağımlılıklarını yönetir. Türleri: ApplicationContext (daha karmaşık ve eager), BeanFactory(basit ve lazy).
+
+* Autowiring: Bir Spring Bean'ı için bağımlılıkların bağlanması sürecidir.
+
+---
+
+### @Component vs @Bean
+
+| Özellik | @Component | @Bean |
+| --- | --- | --- |
+| Where? | Can be used on any Java class | Typically used on methods in Spring Configuration classes |
+| Ease of Use | Very easy. Just add annotation | Write all the code |
+| Autowiring | Yes; Field, Setter, Constructor injection | Yes; method call or method parameters |
+| Who creates beans? | Spring Framework | Spring Framework, but you write the creation code |
+| Recommended for | Instantiating Beans for your own application code: @Component | 1- Custom Business Logic. 2- Instantiating Beans from 3rd party libraries @Ban |
