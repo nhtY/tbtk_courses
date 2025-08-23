@@ -1287,3 +1287,59 @@ public class MainApp {
 | Usage Frequency     | Almost all recent projects                                       | Rarely                                   |
 | Recommendation      | Either of them is fine BUT be consistent                         | Do NOT mix both                          |
 | Debugging difficulty| Hard                                                             | Medium                                   |
+
+
+---
+
+### Spring Stereotype Annotations
+@Component bizim için herhangi bir class'ta kullanılabilecek genel kullanımı olan bir annotasyondur. Ayrıca tüm Spring Stereotype Annotayonlar için temeldir.
+
+@Componet annotasyonun class'ların yaptığı işe göre özlelleştirilmiş halleri şunlardır:
+
+* @Service: işarteli class'ta iş mantığı ile ilgili kodlar var demektir.
+
+* @Controller: İşaretli class bir web controller'dır ve istekleri ele alıyor demektir.
+
+* @Repository: İşaretli class veri tabanındaki verilere erişiyor ya da verileri manipüle ediyor demektir.
+
+> Genelde class'ı yaptığı işle ilintili annotasyonla işaretlemek tavsiye edilir. Böylece AOP (Aspect Oriented Programming) ile daha sonra ek özellikler yükleyebiliriz. Mesela @Repository için Spring JDBC Exception dönüşümlerini otomatik olarak bağlar.
+
+--- 
+
+## Spring Annotasyonları Tekrar
+
+| Annotation        | Description                                      |
+|-------------------|--------------------------------------------------|
+| @Configuration    | Indicates that a class declares one or more @Bean methods and may be processed by the Spring container to generate bean definitions                                     |
+| @ComponentScan    | Define specific packages to scan for components. If specific packages are not defined, scanning will occur from the package of the class that declares this annotation                                     |
+| @Bean             | Indicates that a method produces a bean to be managed by the Spring container                                     |
+| @Component        | Indicates that an annotated class is a component                                     |
+| @Service          | specialization of @Component indicating that an annotated class has business logic                                     |
+| @Controller       | Specialization of @Component indicating that an annotated class is a Controller (e.g. a web controller). Used to define controller in your web applications and REST API                                     |
+| @Repository       | Specialization of @Component indicating that an annotated class is used to retrieve and/or manipulate data in database                                     |
+| @Primary          | Indicates that a bean should be given preference when multiple candidates are qualified to autowire a single valued dependency                                     |
+| @Qualifier        | Used on a field or parameter as a qualifier for candidate beans when autowiring                                     |
+| @Lazy             | description1                                     |
+| @Scope(value=ConfigurableBeanFactory.SCOPE_PROTOTYPE) | Indicates that a bean has to be lazily initialized. Absence of @Lazy annotation will lead to eager initialization (the default behavior)                                      |
+| @PostConstruct    | ıdentifies the method that will be executer after dependency injection is done to perform any initialization                                     |
+| @PreDestroy       | Identifies the method that will receive the callback notifcation to signal that the instance is in the process of being removed by the container. typically used to releasse resources that it has been holding.                                     |
+| @Named            | Jakarta Contexts & Dependency Injection (CDI) Annotation similar to @Component                                     |
+| @Inject           | Jakarta Contexts & Dependency Injection (CDI) Annotation similar to @Autowired                                     |
+
+---
+
+## Spring Temel Konsept Tekrar
+
+| Concept                  | Description                                      |
+|--------------------------|--------------------------------------------------|
+| Dependency Injecttion    | description1                                     |
+| Constructor Injection    | description1                                     |
+| Setter Injection         | description1                                     |
+| Field Injection          | description1                                     |
+| IoC Container            | description1                                     |
+| Bean Factory             | description1                                     |
+| Application Context      | description1                                     |
+| Spring Beans             | description1                                     |
+| Auto-wiring              | description1                                     |
+
+---
