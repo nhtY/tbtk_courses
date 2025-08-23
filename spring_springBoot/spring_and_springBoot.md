@@ -1190,3 +1190,100 @@ class Dependency {
 groupId: jakarta.inject
 artifactId: jakarta.inject-api
 ile tanımlı bağımlılık pom ile eklendi.
+
+### XML Konfigurasyonu
+@Configuration, @Bean, @Component, @ComponentScan ile java kodu kullanarak Spring'i konfigure edip bean'lar oluşturmasını ve yönetmesini sağlayabiliyorduk. 
+
+Ancak önceleri bu tanımlamalar xml ile yapılıyordu. Örneğin:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:component-scan base-package="com.example.ecommerce"/>
+
+    <bean id="product" class="com.example.ecommerce.Product">
+        <property name="name" value="Kablosuz Kulaklık"/>
+        <property name="price" value="999.90"/>
+    </bean>
+
+    <bean id="shoppingCart" class="com.example.ecommerce.ShoppingCart">
+        <property name="product" ref="product"/>
+    </bean>
+
+</beans>
+```
+Burada component'lerin hangi package altında aranacağı belirlenmiş. Ayrıca Bean'ların id'si (adı) ve class'ları (tipi) belirlenmiş. Buna ek olarak property ile sahip oldukları field'ler de tanımlanmış.
+
+ShoppingCart class'ına Product inject edilmesi için de 'ref' özelliği kullanılmış.
+
+Class'lar ise şöyle görünüyor:
+```java
+package com.example.ecommerce;
+
+public class Product {
+    private String name;
+    private double price;
+    // getters setters...
+}
+
+package com.example.ecommerce;
+
+public class ShoppingCart {
+    private Product product;
+
+    // Setter metodu ile bağımlılık enjeksiyonu
+    public void setProduct(Product product) {
+        this.product = product;
+    }
+
+    public void checkout() {
+        System.out.println("Sepet içeriği kontrol ediliyor...");
+        if (product != null) {
+            System.out.println("Sepetteki ürün: " + product.toString());
+        } else {
+            System.out.println("Sepetiniz boş.");
+        }
+    }
+}
+
+package com.example.ecommerce;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class MainApp {
+    public static void main(String[] args) {
+
+        // 1. Spring IoC konteynerini başlatıyoruz.
+        // Konteyner, 'app-context.xml' dosyasını okuyarak bean'leri oluşturur.
+        ApplicationContext context = new ClassPathXmlApplicationContext("app-context.xml");
+
+        // 2. XML'de tanımladığımız 'shoppingCart' bean'ini alıyoruz.
+        // Spring, bu nesneyi bizim için zaten oluşturmuş ve 'product' bağımlılığını enjekte etmiştir.
+        ShoppingCart cart = (ShoppingCart) context.getBean("shoppingCart");
+
+        // 3. Alınan bean'in metodunu çağırıyoruz.
+        cart.checkout();
+    }
+}
+```
+
+* Java ile konfigurasyon vs XML ile konfigurasyon
+Özetle kıyaslayacak olursak:
+
+
+| Heading            | Annotations                                                      | XML Configuration                       |
+|---------------------|------------------------------------------------------------------|------------------------------------------|
+| Ease of Use         | Very Easy (deemed close to variable)                             | Cumbersome                               |
+| Short and Concise   | Yes                                                              | No                                       |
+| Clean POJOs         | No. POJOs are polluted with Spring Annotations                   | Yes. No change in Java code              |
+| Easy to Maintain    | Yes                                                              | No                                       |
+| Usage Frequency     | Almost all recent projects                                       | Rarely                                   |
+| Recommendation      | Either of them is fine BUT be consistent                         | Do NOT mix both                          |
+| Debugging difficulty| Hard                                                             | Medium                                   |
