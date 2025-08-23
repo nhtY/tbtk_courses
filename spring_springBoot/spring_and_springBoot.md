@@ -1332,14 +1332,17 @@ public class MainApp {
 
 | Concept                  | Description                                      |
 |--------------------------|--------------------------------------------------|
-| Dependency Injecttion    | description1                                     |
-| Constructor Injection    | description1                                     |
-| Setter Injection         | description1                                     |
-| Field Injection          | description1                                     |
-| IoC Container            | description1                                     |
-| Bean Factory             | description1                                     |
-| Application Context      | description1                                     |
-| Spring Beans             | description1                                     |
-| Auto-wiring              | description1                                     |
+| Dependency Injecttion    | The process of identifying beans, their dependencies and wiring them together (provides IOC - inversion of control)                                     |
+| Constructor Injection    | Dependencies are set by craeting the Bean using its Constructor                                     |
+| Setter Injection         | Dependencies are set by calling setter methods on your beans                                     |
+| Field Injection          | No setter or constructor. Dependency is injected using reflection                                     |
+| IoC Container            | Spring IOC Context that manages Spring beans & their lifecycle                                     |
+| Bean Factory             | Basic Spring IoC Container                                     |
+| Application Context      | Advanced Spring IoC Container with enterprise-specifi feature - Easy to use in web applications with internationlization fatures and good integration with Spring AOP                                     |
+| Spring Beans             | Objects managed by Spring                                     |
+| Auto-wiring              | Process of wiring in dependencies for a Spring Bean                                     |
 
 ---
+
+## Bölüm 10 - Maven
+
