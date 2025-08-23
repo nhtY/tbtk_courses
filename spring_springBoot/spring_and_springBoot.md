@@ -1314,14 +1314,14 @@ public class MainApp {
 | @ComponentScan    | Define specific packages to scan for components. If specific packages are not defined, scanning will occur from the package of the class that declares this annotation                                     |
 | @Bean             | Indicates that a method produces a bean to be managed by the Spring container                                     |
 | @Component        | Indicates that an annotated class is a component                                     |
-| @Service          | specialization of @Component indicating that an annotated class has business logic                                     |
+| @Service          | Specialization of @Component indicating that an annotated class has business logic                                     |
 | @Controller       | Specialization of @Component indicating that an annotated class is a Controller (e.g. a web controller). Used to define controller in your web applications and REST API                                     |
 | @Repository       | Specialization of @Component indicating that an annotated class is used to retrieve and/or manipulate data in database                                     |
 | @Primary          | Indicates that a bean should be given preference when multiple candidates are qualified to autowire a single valued dependency                                     |
 | @Qualifier        | Used on a field or parameter as a qualifier for candidate beans when autowiring                                     |
-| @Lazy             | description1                                     |
-| @Scope(value=ConfigurableBeanFactory.SCOPE_PROTOTYPE) | Indicates that a bean has to be lazily initialized. Absence of @Lazy annotation will lead to eager initialization (the default behavior)                                      |
-| @PostConstruct    | ıdentifies the method that will be executer after dependency injection is done to perform any initialization                                     |
+| @Lazy             | Indicates that a bean has to be lazily initialized. Absence of @Lazy annotation will lead to eager initialization (the default behavior)                                     |
+| @Scope(value=ConfigurableBeanFactory.SCOPE_PROTOTYPE) | Defines a bean to be a prototype - a new instance will be created every time you refer to the bean. Default scope is singleton - one instance per IoC container                                      |
+| @PostConstruct    | Identifies the method that will be executed after dependency injection is done to perform any initialization                                     |
 | @PreDestroy       | Identifies the method that will receive the callback notifcation to signal that the instance is in the process of being removed by the container. typically used to releasse resources that it has been holding.                                     |
 | @Named            | Jakarta Contexts & Dependency Injection (CDI) Annotation similar to @Component                                     |
 | @Inject           | Jakarta Contexts & Dependency Injection (CDI) Annotation similar to @Autowired                                     |
@@ -1333,7 +1333,7 @@ public class MainApp {
 | Concept                  | Description                                      |
 |--------------------------|--------------------------------------------------|
 | Dependency Injecttion    | The process of identifying beans, their dependencies and wiring them together (provides IOC - inversion of control)                                     |
-| Constructor Injection    | Dependencies are set by craeting the Bean using its Constructor                                     |
+| Constructor Injection    | Dependencies are set by creating the Bean using its Constructor                                     |
 | Setter Injection         | Dependencies are set by calling setter methods on your beans                                     |
 | Field Injection          | No setter or constructor. Dependency is injected using reflection                                     |
 | IoC Container            | Spring IOC Context that manages Spring beans & their lifecycle                                     |
