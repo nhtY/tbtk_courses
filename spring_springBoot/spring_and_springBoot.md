@@ -1049,3 +1049,144 @@ Yani aynı JVM'de birden fazla Spring IoC Container çalıştırırsak, Spring S
 Statefull'a örnek olarak uygulamanın kullanıcı bilgileri olabilir. Eğer kullanıcı bilgilerini tutan bir nesne varsa onun tüm uygulamada kullanılmasını istemeyiz ve her kullanıcı için kullanıcı bilgisini tutan yeni bir instance'a ihtiyaç duyarız. Dolayısıyla bilgide devamlılık aranıyorsa Prototype kullanılabilir.
 
 Aksi takdirde daha uygulama genelinde kullanılabilir, generic class'lar varsa bunlar için aynı instance kullanılabilir. Dolayısıyla stateless diyebiliriz. 
+
+---
+
+### @PostConstruct ve @PreDestroy
+Bir bean oluşturukduktan ve bağımlılıkları inject edildikten hemen sonra yapılacak işler için bir metodumuz olsun. Bu metodu @PostConstruct ile işaretlersek Spring bizim yerimize bu metodu **constructor çağrıldıktan ve dependency inject edildikten sonra** çağıracaktır.
+
+@PreDestroy ise Spring tarafından yönetilen Bean destroy edilmeden önce yapılacakların bulunduğu metodu işaretlemede kullanılır ve böylece varsa kullanılan kaynakları serbest bırakabiliriz.
+
+Örnek
+```java
+@Component
+class A {
+    private Dependency dependency;
+    private Dependency2 dependency2;
+
+    @Autowired
+    public void setDependency2(Dependency2 dependency2) {
+        System.out.println("A: Dependency2 injected.");
+        this.dependency2 = dependency2;
+    }
+
+
+    public A(Dependency dependency) {
+        System.out.println("A: Constructor called.");
+
+        this.dependency = dependency;
+
+        System.out.println("A: Dependency injected.");
+    }
+
+    @PostConstruct
+    public void init() {
+        System.out.println("A: Init method called. After constructor and dependency injection.");
+        dependency.doSomething();
+        dependency2.doSomethingElse();
+    }
+
+    @PreDestroy
+    public void destroy() {
+        System.out.println("A: Destroy method called. Releasing resources...");
+    }
+}
+
+@Component
+class Dependency {
+    public void doSomething() {
+        System.out.println("Dependency: Doing something.");
+    }
+}
+
+@Component
+class Dependency2 {
+    public void doSomethingElse() {
+        System.out.println("Dependency2: Doing something else.");
+    }
+}
+
+@Configuration
+@ComponentScan
+public class PrePostAnnotationsApplication {
+
+    public static void main(String[] args) {
+        try (var context = new org.springframework.context.annotation.AnnotationConfigApplicationContext(PrePostAnnotationsApplication.class)) {
+            System.out.println("Context initialized successfully.");
+        }
+    }
+}
+```
+
+Çıktısı:
+```bash
+A: Constructor called.
+A: Dependency injected.
+A: Dependency2 injected.
+A: Init method called. After constructor and dependency injection.
+Dependency: Doing something.
+Dependency2: Doing something else.
+Context initialized successfully.
+A: Destroy method called. Releasing resources...
+```
+
+Yani constructor çağrılır, varsa constructor ile dependency inject edilir. Devamında varsa setter ile dependency inject edilir. Tüm dependency'ler inject edilip bean hazır hale gelince @PostConstruct ile işaretlenen metot çağrılır. Daha sonra bean destroy edilmeden önce yapılacak işler varsa @PreDestroy ile işaretlenen metot içinde yapılır. Bu annotasyon ile destroy öncesi metodun çağrılması için Spring'e sinyal verilir.
+
+---
+
+### J2EE --> Java EE --> Jakarta EE
+* Kurumsal uygulama geliştirmede kullanılan özellikler önceleri JDK ile geliyordu. Sonra bunu ayırdılar ve J2EE (Java 2 Enterprise) adı altında harici olarak sunuldu
+
+* Yeniden markalama kapsamında J2EE adı yerini Java EE (Java Platform Enterprise Edition) a bıraktı.
+
+* Daha sonra Oracle, Java EE'nin haklarını Eclipse Vakfına verdi. Ve vakıf da yapılan bir anket sonucu Jakarta EE adını kullandı.
+
+* Jakarta EE ile
+	* Jakarta Server Pages (JSP)
+	* Jakarta Standad Tag Library (JSTL)
+	* Jakarta Enterprise Beans (EJB)
+	* Jakarta RESTful Web Services (JAX-RS)
+	* Jakarta Bean Validation
+	* **Jakarta Contexts and Dependency Injection (CDI)**
+	* Jakarta Persistence API (JPA)
+
+(burada Jakarta yazan yerlere önceden Java getiriyorduk denebilir.)
+
+> Spring 6 ve Spring Boot 3 ile birlikte jakarta desteklenmeye başladı ve paket isimlerinde gördüğümüz 'javax' yerine 'jakarta' geliyor.
+
+#### Jakarta Contexts and Dependency Injection (CDI)
+* CDI specification Java EE 6 ile 2009'da hayatımıza girdi. Şimdi ise Jakarta Contexts and Dependency Injection (CDI) adıyla biliniyor.
+* CDI bir specification (interface) yani yapılacak işlerin tanımlandığı bir arayüzdür. Bu arayüzün implementasyonu çeşitlilik gösterebilir. Spring Framework de CDI'ı implemente eder. Aynı Spring Data JPA'in, JPA'i implemente etmesi gibi.
+* CDI içinde Inject API mevcut ve oradan bazı annotasyonlar şunlardır:
+	* Inject (Autowired in Spring)
+	* Named (Component in Spring)
+	* Qualifier
+	* Scope
+	* Singleton
+
+Örnek
+```java
+// @Component
+@Named
+class MyClass {
+
+	private Dependency dependency;
+
+	// @Autowired
+	@Inject
+	public void setDependency(Dependency dependency) {
+		this.dependency = dependency;
+	}
+}
+
+// @Component
+@Named
+class Dependency {
+
+}
+```
+
+> Bu tarz annotasyonları kullanabilmek için projeye
+groupId: jakarta.inject
+artifactId: jakarta.inject-api
+ile tanımlı bağımlılık pom ile eklendi.
