@@ -815,7 +815,9 @@ Spring @Component ile işaretlenmiş herhangi bir class'ın instance'ını varsa
 
 @Lazy, @Component ile işaretlenmiş class ya da @Bean ile işaretlenmiş metotlarla kullanılabilir.
 
-> Lazy olarak initialize edilecek bean'ın yerine **Proxy** bir obje oluşturulur. Bu mekanizmanın temel mantığı şöyle çalışır:
+> Lazy olarak initialize edilecek bean'ın yerine **Proxy** bir obje oluşturulur. 
+
+Bu mekanizmanın temel mantığı şöyle çalışır:
 
 Bir bean'i @Lazy anotasyonu ile işaretlediğinizde, Spring bu bean'i uygulamanın başlangıcında (startup) oluşturmaz. Bunun yerine, ilgili bean'e ihtiyaç duyulduğu an (yani bir metot çağrısı yapıldığında) gerçek bean'i oluşturan bir proxy objesi enjekte eder. Bu proxy, gerçek bean'in vekilidir.
 
@@ -955,3 +957,96 @@ Doing something...
 
 
 Eğer eager ise uygulama ayağa kalkarken bean oluşturulamazsa hata alınır ve process sonlanır. Ama lazy ise adece exception fırlatılır ve process kaldığı yerden devam eder, eğer bu durum başka hatalara neden olmazsa.
+
+### Scope of a Bean
+Scope, herhangi bir class için oluşturulacak instance'ın uygulama genelinde bir tane mi yoksa birden fazla ve ayrı birer instance olarak mı oluşturulacağına dairdir.
+
+Örneğin Singleton ise ApplicationContext içinde o bean'dan bir tane vardır ve context'ten ne zaman o türden bean istesen sana hep aynısını verir, yenisini oluşturmaz.
+
+Ancak scope Prototype ise context'ten her istediğinde yeni bir bean initialize edilir ve onu kullanırsın.
+
+Örnek:
+```java
+@Component
+class NormalClass {
+
+}
+
+
+@Scope(value= ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+@Component
+class PrototypeClass {
+
+}
+
+@Configuration
+@ComponentScan
+public class BeanScopeExampleApllication {
+
+    public static void main(String[] args) {
+        try (var context = new org.springframework.context.annotation.AnnotationConfigApplicationContext(BeanScopeExampleApllication.class)) {
+            System.out.println("Context initialized successfully.");
+
+            NormalClass normalBean1 = context.getBean(NormalClass.class);
+            NormalClass normalBean2 = context.getBean(NormalClass.class);
+
+            System.out.println("NormalBean1 and NormalBean2: " + normalBean1 + " = " + normalBean2);
+            System.out.println("Normal beans are the same instance: " + (normalBean1 == normalBean2));
+
+            PrototypeClass prototypeBean1 = context.getBean(PrototypeClass.class);
+            PrototypeClass prototypeBean2 = context.getBean(PrototypeClass.class);
+
+            System.out.println("PrototypeBean1 and PrototypeBean2: " + prototypeBean1 + " != " + prototypeBean2);
+            System.out.println("Prototype beans are DIFFERENT instances: " + (prototypeBean1 != prototypeBean2));
+
+        }
+    }
+}
+```
+
+Çıktısı şöyle olacaktır:
+```bash
+Context initialized successfully.
+
+NormalBean1 and NormalBean2: com.nht.scope.NormalClass@22ff4249 = com.nht.scope.NormalClass@22ff4249
+Normal beans are the same instance: true
+
+PrototypeBean1 and PrototypeBean2: com.nht.scope.PrototypeClass@7586beff != com.nht.scope.PrototypeClass@3b69e7d1
+Prototype beans are DIFFERENT instances: true
+```
+
+Spring Bean'ları için belirli scope'ların tanımı şöyledir:
+
+* **Singleton**: One object instance per Spring IoC Container.
+* **Prototype**: Possibly many object instances per Spring IoC Container.
+
+Yalnızca Web uygulamasına yönelik Spring Application Context'deki scope'lar ise:
+
+* Request: One object instance per single HTTP request.
+* Session: One object instance per single HTTP session. (Örnek Aynı kullanıcıya ait birden fazla request bir session'a ait olabilir.)
+* Application: One object insatence per web application runtime.
+* Websocket: One object instance per WebSocker instance.
+
+> Spring Singleton ile design pattern olarak yazılan Singleton arasında ufak bir fark var!
+
+* Spring Singleton: One object instance per Spring IoC Container iken
+* Java Singleton: One objet instance per JVM.
+
+Yani aynı JVM'de birden fazla Spring IoC Container çalıştırırsak, Spring Singleton nesnelerimizden birden fazlasına sahip olabilriz. Ancak bu genelde yapılan bir şey olmadığından (eğitimde öyle söyleniyor) Spring Singleton ile Java Singleton çoğu zaman aynı anlam ve işlevde olabiliyor.
+
+### Prototype vs Singleton
+# Prototype vs Singleton Bean Scope
+
+| Özellik      | Prototype                                                                 | Singleton                                                        |
+|--------------|---------------------------------------------------------------------------|------------------------------------------------------------------|
+| Instances    | Possibly many per Spring IOC Container                                    | One per Spring IOC Container                                     |
+| Beans        | New bean instance created every time bean is referred to                  | Same bean instance reused                                        |
+| Default      | NOT Default                                                               | Default                                                          |
+| Code Snippet | `@Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)`                 | `@Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)` OR Default |
+| Usage        | Rarely used                                                               | Very frequently used                                             |
+| Recommended  | Stateful beans                                                            | Stateless beans                                                  |
+| Scenario     | Stateful beans                                                            | Stateless beans                                                  |
+
+Statefull'a örnek olarak uygulamanın kullanıcı bilgileri olabilir. Eğer kullanıcı bilgilerini tutan bir nesne varsa onun tüm uygulamada kullanılmasını istemeyiz ve her kullanıcı için kullanıcı bilgisini tutan yeni bir instance'a ihtiyaç duyarız. Dolayısıyla bilgide devamlılık aranıyorsa Prototype kullanılabilir.
+
+Aksi takdirde daha uygulama genelinde kullanılabilir, generic class'lar varsa bunlar için aynı instance kullanılabilir. Dolayısıyla stateless diyebiliriz. 
