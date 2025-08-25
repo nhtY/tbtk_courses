@@ -1345,7 +1345,7 @@ public class MainApp {
 
 ---
 
-## Bölüm 10 - Maven
+## Section 10 - Maven
 Kendi sitesinde maven şöyle tanıtılmış:
 *Apache Maven is a build tool for Java projects. Using a project object model (POM), Maven manages a project's compilation, testing, and documentation.*
 [Maven Home Page](https://maven.apache.org/)
@@ -1636,7 +1636,9 @@ Bazı maven komutlarına bakalım:
 * mvn- test-compile --> test dosyalarını derler.
 * mvn clean --> target isimli klasörü, yani daha önce oluşturulmuş derlemeleri ve jar'ları topluca siler.
 * mvn test --> unit testleri çalıştırır.
-* mvn package --> projemizi bir jar dosyasında toplar. 
+* mvn package --> projemizi bir jar dosyasında toplar.
+
+> Sping Boot Maven Plugin ile bir container image'ı oluştururken `mvn spring-boot:build-image` komutu kullanılabilir.
 
 ### Software Versioning
 Projelerimizi versiyonlarken genel olarak şu yapıyı kullanırız `MAJOR.MINOR.PATCH[-MODIFIER]`. Burada modifier kısmı zorunlu olmayan bir seçenek.
@@ -1656,4 +1658,5 @@ Yani snapshot'tan milestone'a, oradan relase candidate'e ve en sonunda relase'e 
 
 > SNAPSHOT'lar geliştirme aşamasında olduklarından ürünlerimizde production ortamında kullanmamak gerekir.
 
+## Section 11 - Spring Boot
 
