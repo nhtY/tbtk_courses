@@ -1660,3 +1660,16 @@ Yani snapshot'tan milestone'a, oradan relase candidate'e ve en sonunda relase'e 
 
 ## Section 11 - Spring Boot
 
+Spring Boot kullanmadan önce Spring projelerimizde bazı zorluklar ve vakit alan işler vardı:
+* Dependency Management: Bir web uygulaması geliştirirken birçok bağımlılığı konfigure etmek gerekiyordu **(pom.xml)**. Spring framework, Spring MVC, JSON binding, log4j gibi bağımlılıkları ve onların birbiriyle uyumlu versiyonlarını projemize dahil etmeli ve versiyonlarını yönetmeliydik. Test için mockito, junit ...vb gibi gerekli tüm dependency'ler yüklenmeliydi. Yani daha başlangıçta bağımlılıklarla ilgili birçok iş vardı.
+
+* w*eb.xml**: Örneğin bir web uygulamsı için web.xml dosyasında DispatcherServlet'i Spring MVC konfigüre edilmelidydi.
+
+* Spring Confiuration: Spring'in kendisini de konfigüre etmeliydik **(context.xml)**. Component Scan, View Resolver vb..
+
+* NFR (Non-Functional Requirements): Loglama, Error Handling, Monitoring gibi fonksiyonel olmayan özellikleri elle ayarlamalı ve implemente ediyorduk.
+
+*pom.xml, web.xml, context.xml* gibi dosyalarda uygulamayı konfigüre edip ardından NFR'ı da implemente ederek geliştirme yapmak hiç kolay değildi ve bunları her bir proje için baştan yapıyorlardı. Spring Boot ile birlikte bunlar son buşdu denebilir.
+
+
+
