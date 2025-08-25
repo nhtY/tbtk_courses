@@ -1560,3 +1560,100 @@ tanımlanmış. Yani `spring-boot-starter-web` kullanılacaksa bunun versiyonu 3
 
 * Parent'tan gelen dependency'ler yada versiyon bilgileri projemizin pom'unda ezilebilir. Yani `dependencies` altına bir bağımlılık eklerken versiyon belirtirsek bizim belirttiğimiz versiyon kullanılacaktır. Ya da yine projemizin pom'unda `dependencyManagement` altında bağımlılık için versiyon bilgilerini belirtirsek projemizde `dependencies` altına ilgili bağımlılık eklendiğinde o versiyon kullanılacaktır.
 
+> `dependencyManagement` sadece versiyon bilgileri için tanımlama yapar. Oraya eklenen dependency'ler jar olarak indirilmez, projeye dahil edilmez. Sadece `dependencies` altında bağımlılık eklendiğinde versiyon belirtilmediyse dependencyManagement'ta belirtilen versiyon kullanılır.
+
+
+Ayrıca projemizdeki bağımlılıkları ağaç yapısında görmek için `mvn dependency:tree` komutu kullanılabilir:
+
+```bash
+[INFO] com.nht:demo-spring:jar:0.0.1-SNAPSHOT
+[INFO] +- org.springframework.boot:spring-boot-starter:jar:3.5.5:compile
+[INFO] |  +- org.springframework.boot:spring-boot:jar:3.5.5:compile
+[INFO] |  |  \- org.springframework:spring-context:jar:6.2.10:compile
+[INFO] |  +- org.springframework.boot:spring-boot-autoconfigure:jar:3.5.5:compile
+[INFO] |  +- org.springframework.boot:spring-boot-starter-logging:jar:3.5.5:compile
+[INFO] |  |  +- ch.qos.logback:logback-classic:jar:1.5.18:compile
+[INFO] |  |  |  \- ch.qos.logback:logback-core:jar:1.5.18:compile
+[INFO] |  |  +- org.apache.logging.log4j:log4j-to-slf4j:jar:2.24.3:compile
+[INFO] |  |  |  \- org.apache.logging.log4j:log4j-api:jar:2.24.3:compile
+[INFO] |  |  \- org.slf4j:jul-to-slf4j:jar:2.0.17:compile
+[INFO] |  +- jakarta.annotation:jakarta.annotation-api:jar:2.1.1:compile
+[INFO] |  +- org.springframework:spring-core:jar:6.2.10:compile
+[INFO] |  |  \- org.springframework:spring-jcl:jar:6.2.10:compile
+[INFO] |  \- org.yaml:snakeyaml:jar:2.4:compile
+[INFO] +- org.springframework.boot:spring-boot-starter-web:jar:3.5.5:compile
+[INFO] |  +- org.springframework.boot:spring-boot-starter-json:jar:3.5.5:compile
+[INFO] |  |  +- com.fasterxml.jackson.core:jackson-databind:jar:2.19.2:compile
+[INFO] |  |  |  +- com.fasterxml.jackson.core:jackson-annotations:jar:2.19.2:compile
+...
+...
+...
+...
+```
+
+gibi bir çıktı verecektir.
+
+Bu çıktıda sonunda `:compile` yazan bağımlılıklar var. Bunun anlamı kaynak kodda bu bağımlılıklar kullanılabilirler. Bir de sonuna `:test` yazan bağımlılklar var onlar da testlerde kullanılabilir.
+
+----
+
+### Maven Build Life Cycle
+
+Build LifeCysle bir dizi aşamadan oluşur:
+
+* **Validate**: Projenin doğru ve geçerli olduğundan emin olur. Gerekli tüm bilgilerin (POM dosyası, dizin yapısı vb.) mevcut olup olmadığını kontrol eder.
+
+* **Compile**: Projenin kaynak kodlarını derler ve target/classes dizinine yerleştirir. Önce java source dosyalarını ardından java test dosyalarını compile eder.
+
+* **Test**: Derlenmiş kaynak kodlarını kullanarak testleri çalıştırır. Test kodlarının derlenmesi ve testlerin çalıştırılması bu aşamada gerçekleşir.
+
+* **Package**: Derlenmiş kodları, birim testlerini geçtikten sonra, dağıtılabilir bir formata (örneğin, bir .jar veya .war dosyası) paketler.
+
+* **Verify**: Entegrasyon testlerinin sonuçlarını kontrol eder (paketlemeden sonra yapılan entegrasyon testi varsa). Bu aşamada, projenin kalite hedeflerini karşılayıp karşılamadığı doğrulanır.
+
+* **Install**: Paketlenmiş dosyayı (örneğin, .jar veya .war), diğer projelerin bağımlılık olarak kullanabilmesi için yerel Maven deposuna kurar.
+
+* **Deploy**: Nihai paketi, diğer geliştiriciler veya ekipler tarafından erişilebilmesi için uzak (uzak sunucu) depoya dağıtır. Bu, projenin paylaşıma açıldığı son aşamadır.
+
+---
+
+### How Maven Works
+* Maven follows Convention over Configuration.
+    * Önceden tanımlı bir proje klasör yapısı.
+    * Çoğu java projesi bu Maven proje yapısını kullanır. Bu da
+* Maven Central'de (Uzak repoda) jar (ve diğer) dosyaları artifactId ve groupId'ye göre indekslenerek tutulur.
+    * Bağımlılıkların tüm versiyonlarını depolar.
+    * Eğer maven central dışında bir repodan bağımlılıkları çekmek istersen pom içinde `<repositories>` altında `<repository>` etiketiyle uzak repo tanımlayabilirsin.
+    * Repository'lerde olduğu gibi pluginler için de `<pluginRepositories>` altında `<pluginRepository>` etiketiyle uzak repo tanımlayabiliriz.
+* Bir bağımlılık pom.xml'e eklendiğinde maven onu uzak repo'dan indirmeye çalışır.
+    * İndirilen bağımlılıklar lokal maven repository'de yani kullanıcının bilgisayarında depolanır.
+    * *local repository*: Maven Repository'den indirilen jar ve bağımlılıkl dosyalarının depolandığı kendi makinemizdeki klasör. users/ahmet/.m2/... şeklinde bir yolu var ve orada jar dosyalarını görebiliriz.
+
+### Maven Commands
+Bazı maven komutlarına bakalım:
+* mvn --version --> maven versiyonunu verir.
+* mvn compile --> Source dosyalarını derler.
+* mvn- test-compile --> test dosyalarını derler.
+* mvn clean --> target isimli klasörü, yani daha önce oluşturulmuş derlemeleri ve jar'ları topluca siler.
+* mvn test --> unit testleri çalıştırır.
+* mvn package --> projemizi bir jar dosyasında toplar. 
+
+### Software Versioning
+Projelerimizi versiyonlarken genel olarak şu yapıyı kullanırız `MAJOR.MINOR.PATCH[-MODIFIER]`. Burada modifier kısmı zorunlu olmayan bir seçenek.
+
+Örneğin: spring-core **6.2.7-RELEASE**
+
+* **MAJOR**: Büyük güncellemerde bu kısımın versiyon numarası değişir. Ayrıca kullanıcı olarak bizim projemizde böyle bir geçiş yapmmaızda kod değişikliği gerektirebilir. (10.0.0 --> 11.0.0)
+* **MINOR**: Görece daha az değişiklik için yapılan ve güncelleme sonrası kullanıcının ilgili bağımlılığı kullanırken kod değiştirmesini gerektirmeyen ya da çok az gerektiren değişiklikler barındırır. (10.1.0 --> 10.2.0)
+* **PATCH**: Küçük değişikler için yapılan versiyon geçişleridir. (10.5.4 --> 10.5.5)
+* **MODIFIER**: Bu kısım zorunlu değil ancak versiyona dair bilgi verir. Mesela SNAPSHOT mı RELEASE mi yoksa RELEASE CANDIDATE(RC) mi ya da MILESTONE (M) mi gibi. Genelde RELEASE versiyonlarda bu ifade kullanılmayabilir. Bazı bağımlılıklarda Final gibi ifadeler de yer alabiliyor.
+
+Örneğin bir projenin versiyonunu adım adım yayına alacağız. Bu süreçte isimlendirmemiz şuna benzer olacaktır:
+
+*10.0.0-SNAPSHOT --> 10.0.0-M1 --> 10.0.0-M2 --> 10.0.0-RC1 --> 10.0.0-RC2 --> 10.0.0*
+
+Yani snapshot'tan milestone'a, oradan relase candidate'e ve en sonunda relase'e çıkarız.
+
+> SNAPSHOT'lar geliştirme aşamasında olduklarından ürünlerimizde production ortamında kullanmamak gerekir.
+
+
