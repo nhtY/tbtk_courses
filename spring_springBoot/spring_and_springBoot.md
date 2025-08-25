@@ -1674,3 +1674,56 @@ Spring Boot kullanmadan önce Spring projelerimizde bazı zorluklar ve vakit ala
 ### Starting up a new Spring Boot Project
 Spring initializr ile online olarak yeni bir spring projesi başlatmak ve dilediğimiz bağımlılıkları listeden seçerek eklemek çok kolay. Bununla birlikte eğer bir IDE kullanılıyorsa Spring Tool Suite de kullanılabilir.
 
+> REST API geliştireceksek Spring Web'i bağımlılıklara eklemeyi unutmayalım. Bu bağımlılık eklendiyse uygulamayı başlatınca tomcat started at port 8080 gibi bir çıktı göreceğiz.
+
+Basit bir REST controller yazalım ve /courses endpoint'ine istek atıldığında bir dizi kursun bilgisini kullanıcıya iletsin.
+Tarayıcıda http://localhost:8080/courses'a istek atınca şöyle bir çıktı almaya çalışalım: 
+```json
+[
+    {
+        id: 1,
+        name: "Introduction to Automata Theory",
+        author: "Alan Turing"
+    },
+    {
+        id: 1,
+        name:"Introduction to Java",
+        author: "Uncle Bob"
+    }
+]
+```
+
+Course Class'ı
+```java
+public class Course {
+    private long id;
+    private String name;
+    private String author;
+
+    public Course (long id, String name, String author) {
+        this.id = id;
+        this.name = name;
+        this.author = author;
+    }
+
+    // getters-setters-toString
+}
+```
+
+Courses için REST Controller:
+```java
+@RestController
+public class CourseController {
+
+    @RequestMapping("/courses")
+    public List<Course> retrieveAllCourses() {
+        return Arrays.asList(
+            new Course(1, "Introduction to Automata Theory", "Alan Turing"),
+            new Course(2, "Introduction to Java", "Uncle Bob")
+        );        
+    }
+}
+```
+
+`@RestController` sayesinde class'ın atılacak rest isteklerine duyarlı hale gelemsi sağlandı ve `@RequestMapping` ile işaretlenen metot belirtilen endpoint'e atılan isteğe cevap verecek şekilde ayarlandı. Dönülecek Response ise `List<Courses>` olarak belirtildi ve aynı türde cevap metot içinde dönüldü.
+
