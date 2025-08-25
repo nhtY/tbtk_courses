@@ -44,8 +44,9 @@ Repository myRepo = new Repository(myConnection); // Repository'ye ihtiyacı ola
 ```
 ---
 
+### Kısaca Maven ve POM
 
-> Maven: Özellikle java için kullanılan bir build(derleme) otomasyon aracıdır. Yazılım geliştirmenin iki yöniyle ilgilidir: yazılımın nasıl derleneceği ve bağımlılıklar.
+> Maven: Özellikle java için kullanılan bir build(derleme) otomasyon aracıdır. Yazılım geliştirmenin iki yönüyle ilgilidir: yazılımın nasıl derleneceği ve bağımlılıklar.
 
 > pom.xml (Project Object Model): Maven için gerekli. An XML file describes the software project being built, its dependencies on other external modules and components, the build order, directories, and required plug-ins. 
 
@@ -1345,4 +1346,32 @@ public class MainApp {
 ---
 
 ## Bölüm 10 - Maven
+Kendi sitesinde maven şöyle tanıtılmış:
+*Apache Maven is a build tool for Java projects. Using a project object model (POM), Maven manages a project's compilation, testing, and documentation.*
+[Maven Home Page](https://maven.apache.org/)
+
+### Maven Nedir?
+* Yeni projeler oluşturmak
+* Depndency'leri ve onların versiyonlarını yönetmek
+* JAR file build etmek
+* Uygulamayı lokalde Tomcat ya da Jetty ile çalıştırmak
+* Unit testleri koşmak
+* Test ortamına deploy etmek
+ve daha nicesi için maven bize yardımcı bir araçtır.
+
+Maven projesi oluştururken **groudId** ve **artifactId** alanları önemlidir. Bu ikisi birlikte projeyi tanımlamada, diğer projelerden ayırt etmede kullanılır.
+>
+>> Maven: Özellikle java için kullanılan bir build(derleme) otomasyon aracıdır. Yazılım geliştirmenin iki yönüyle ilgilidir: yazılımın nasıl derleneceği ve bağımlılıklar.
+>>
+>>  pom.xml (Project Object Model): Maven için gerekli. An XML file describes the software project being built, its dependencies on other external modules and components, the build order, directories, and required plug-ins. 
+>>
+>> * Bir java maven projesinde group id ve artifact id'nin işlevi maven ekosistemindeki projeleri birbirinden ayırt etmeye yarayan değerlerdir.
+>>
+>> Unique Identification: The combination of Group ID and Artifact ID ensures that your project or dependency is uniquely identified across the Maven ecosystem.
+>>
+>> The Group ID is like a unique namespace for your project. It represents the organization or the broader package that the project belongs to, similar to a company or a domain name. **A Group ID helps distinguish your project from other projects that may have similar Artifact IDs (names) but belong to different organizations**.
+>>
+>> The **Artifact ID is the name of the project or module itself**. It is unique within the scope of the Group ID. Think of it as the specific identifier for a particular project or library that you’re working on or referring to. *The Artifact ID is what Maven uses to download and manage dependencies in your project*.
+
+
 
