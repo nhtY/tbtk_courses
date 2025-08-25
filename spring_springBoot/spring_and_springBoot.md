@@ -1671,5 +1671,6 @@ Spring Boot kullanmadan önce Spring projelerimizde bazı zorluklar ve vakit ala
 
 *pom.xml, web.xml, context.xml* gibi dosyalarda uygulamayı konfigüre edip ardından NFR'ı da implemente ederek geliştirme yapmak hiç kolay değildi ve bunları her bir proje için baştan yapıyorlardı. Spring Boot ile birlikte bunlar son buldu denebilir.
 
-
+### Starting up a new Spring Boot Project
+Spring initializr ile online olarak yeni bir spring projesi başlatmak ve dilediğimiz bağımlılıkları listeden seçerek eklemek çok kolay. Bununla birlikte eğer bir IDE kullanılıyorsa Spring Tool Suite de kullanılabilir.
 
