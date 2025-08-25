@@ -1361,17 +1361,202 @@ ve daha nicesi için maven bize yardımcı bir araçtır.
 
 Maven projesi oluştururken **groudId** ve **artifactId** alanları önemlidir. Bu ikisi birlikte projeyi tanımlamada, diğer projelerden ayırt etmede kullanılır.
 >
->> Maven: Özellikle java için kullanılan bir build(derleme) otomasyon aracıdır. Yazılım geliştirmenin iki yönüyle ilgilidir: yazılımın nasıl derleneceği ve bağımlılıklar.
->>
->>  pom.xml (Project Object Model): Maven için gerekli. An XML file describes the software project being built, its dependencies on other external modules and components, the build order, directories, and required plug-ins. 
->>
->> * Bir java maven projesinde group id ve artifact id'nin işlevi maven ekosistemindeki projeleri birbirinden ayırt etmeye yarayan değerlerdir.
->>
->> Unique Identification: The combination of Group ID and Artifact ID ensures that your project or dependency is uniquely identified across the Maven ecosystem.
->>
->> The Group ID is like a unique namespace for your project. It represents the organization or the broader package that the project belongs to, similar to a company or a domain name. **A Group ID helps distinguish your project from other projects that may have similar Artifact IDs (names) but belong to different organizations**.
->>
->> The **Artifact ID is the name of the project or module itself**. It is unique within the scope of the Group ID. Think of it as the specific identifier for a particular project or library that you’re working on or referring to. *The Artifact ID is what Maven uses to download and manage dependencies in your project*.
+> Maven: Özellikle java için kullanılan bir build(derleme) otomasyon aracıdır. Yazılım geliştirmenin iki yönüyle ilgilidir: yazılımın nasıl derleneceği ve bağımlılıklar.
+>
+>  pom.xml (Project Object Model): Maven için gerekli. An XML file describes the software project being built, its dependencies on other external modules and components, the build order, directories, and required plug-ins. 
+>
+> * Bir java maven projesinde group id ve artifact id'nin işlevi maven ekosistemindeki projeleri birbirinden ayırt etmeye yarayan değerlerdir.
+>
+> Unique Identification: The combination of Group ID and Artifact ID ensures that your project or dependency is uniquely identified across the Maven ecosystem.
+>
+> The Group ID is like a unique namespace for your project. It represents the organization or the broader package that the project belongs to, similar to a company or a domain name. **A Group ID helps distinguish your project from other projects that may have similar Artifact IDs (names) but belong to different organizations**.
+>
+> The **Artifact ID is the name of the project or module itself**. It is unique within the scope of the Group ID. Think of it as the specific identifier for a particular project or library that you’re working on or referring to. *The Artifact ID is what Maven uses to download and manage dependencies in your project*.
+
+#### Compile vs Build
+Konu kodu build etmekten açılmışken build ve compile gibi birbiriyle karıştırılabilecek kavramları açıklayalım.
+
+**Compile (Derleme)**
+
+Derleme, bir yazılımın kaynak kodunu (örneğin, C++ veya Java ile yazılmış kod) makinenin doğrudan anlayabileceği ikili koda (binary) dönüştürme işlemidir. Bu işlem, genellikle bir derleyici (compiler) tarafından yapılır.
+
+    Örnek: Sizin yazdığınız .c uzantılı bir C dosyasını, bilgisayarın çalıştırabileceği .o uzantılı bir nesne dosyasına dönüştürmek derleme işlemidir.
+
+**Build (Oluşturma)**
+
+Oluşturma, derleme işlemini de içeren geniş bir süreçtir. Bir yazılım projesini çalıştırılabilir hale getirmek için gereken tüm adımların toplamıdır. Bu adımlar şunları içerebilir:
+
+* Derleme: Kaynak kodların nesne dosyalarına dönüştürülmesi.
+
+* Bağlama (Linking): Farklı nesne dosyalarının ve kullanılan kütüphanelerin birleştirilerek tek bir çalıştırılabilir dosya oluşturulması.
+
+* Paketleme: Gerekli tüm kaynakların (resimler, sesler, konfigürasyon dosyaları vb.) bir araya getirilerek dağıtıma hazır bir paket haline getirilmesi.
+
+* Test etme: Bazı durumlarda otomatik testlerin çalıştırılması.
+
+Özetle
+
+* Compile (Derleme): Kaynak kodu makine koduna çevirmektir.
+
+* Build (Oluşturma): Bu çeviri işlemini, diğer gerekli adımlarla (bağlama, paketleme vb.) birleştirerek çalıştırılabilir bir ürün elde etme sürecidir.
+
+> Yani, her "build" işlemi "compile" içerir, ancak her "compile" işlemi "build" değildir.
+
+### Maven Projesi oluşturma
+Spring ile çalıştığımızdan Spring Initializr ile proje başlatırken maven seçili olması yeterli. Bu sayede temel proje yapısı hazır halde proje klasörümüzü elde ederiz.
+
+```bash
+my-maven-project/
+├── pom.xml
+└── src/
+    ├── main/
+    │   ├── java/
+    │   │   └── com/
+    │   │       └── mycompany/
+    │   │           └── App.java
+    │   └── resources/
+    │       └── application.properties
+    └── test/
+        ├── java/
+        │   └── com/
+        │       └── mycompany/
+        │           └── AppTest.java
+        └── resources/
+            └── test-data.xml
+```
+
+pom.xml ana dizindedir.
+
+src altında kodlarımız ve kodumuz için yazdığımız testler bulunur.
+
+scr --> main --> resources altında uygulama için gerekli kaynaklar bulunurken
+src --> test --> resources altında test için gerekli kaynakları barındırırız.
+
+> src/main/resources/ Klasörü
+> 
+>Bu klasör, uygulamanızın çalışması için derleme zamanında veya çalışma zamanında ihtiyaç duyduğu statik dosyaları barındırmak için kullanılır. Bir Java projesinde buraya konulan her şey, nihai .jar veya .war paketi içerisinde yer alır ve uygulamanız tarafından erişilebilir hale gelir.
+> 
+> Buraya konulabilecek örnek dosyalar şunlardır:
+>
+> * Yapılandırma dosyaları: application.properties, hibernate.cfg.xml, log4j.properties, logback.xml gibi dosyalar.
+>
+> * Sabit veri dosyaları: Uygulama tarafından okunacak .json, .xml, .csv gibi dosyalar.
+>
+> * Şablonlar: Thymeleaf, Freemarker gibi şablon motorları için kullanılan .html şablon dosyaları.
+>
+> * Statik içerik: Uygulamanızın içinde paketlenen ve istemciye sunulan public static HTML, CSS, JavaScript ve görsel dosyaları. Bu dosyalar genellikle resources klasörünün altında static veya public gibi alt klasörlere konulur.
+
+### POM.xml
+pom.xml Maven projemizin genel özelliklerini, bağımlılık ve pluginlerini tanımlayıp yönettiğimiz bir dosyadır.
+
+Projemize eklediğimiz bağımlılıkları ve eğer içeriyorsa onların da bağımlılıklarını *(transitive dependency)* projeye jar dosyası olarak dahil eder.
+
+Farklı bağımlılıklar içinde gelen aynı bağımlılıkları da çakışma durumunda kendisi yönetir.
+
+Örnek dependency:
+```xml
+<dependencies>
+    
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+	</dependency>
+
+    <!-- Other Dependencies ... -->
+
+</dependencies>
+```
+
+> Dependency kavramı Spring ile kod yazarken bir class'ın diğer class'a olan bağımlılığını ifade ederken Maven bağlamında projemizin kullandığı framework ve kütüphaneleri ifade eder.
 
 
+#### Parent POM
+Parent pom, elimizdeki pom için atadığımız bir parent pom dosyasıdır. Parent içindeki özellikler kalıtılır. Yani orada bir dependency eklenmişse bizim pom.xml'imizde açıkça ifade edilmese de o dependency yüklenir.
+
+Ayrıca <dependencyManagement> adında bir tag vardır. Bunu ister parent ister projenin kendi pom'unda görebilir/kullanabiliriz. Bu tag altında dependency'leri versiyonlarıyla birlikte ifade ederiz. Ne zaman ki <dependencies> altına `dependencyManagement` altındaki bir dependency eklenir o zaman versiyon bilgisi de, belirtilmemişse, management'tan gelir.
+
+parent pom ataması:
+```xml
+<parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.3.3</version>
+    <relativePath/>
+</parent>
+```
+
+spring-boot-starter-parent da `spring-boot-dependencies` i parent olarak kullanıyor.
+
+Burada `<properties>` tag'ı altında pom içinde kullanılacak değişkenler belirlenir. Genelde kullanılacak dependency'ler için versiyon bilgisi tanımlanır.
+Örneğin:
+```xml
+<properties>
+    <!-- other properties ... -->
+    <spring-framework.version>6.2.10</spring-framework.version>
+    <spring-graphql.version>1.4.1</spring-graphql.version>
+    <jakarta-inject.version>2.0.1</jakarta-inject.version>
+    <!-- other properties ... -->
+</properties>
+```
+
+Daha sonra bu property'ler pom içinde farklı yerlerde `${property_name}` şeklinde kullanılabilirler:
+```xml
+<dependencyManagement>
+    <!-- Other Dependencies ... -->
+    <dependency>
+        <groupId>jakarta.inject</groupId>
+        <artifactId>jakarta.inject-api</artifactId>
+        <version>${jakarta-inject.version}</version>
+    </dependency>
+    <!-- Other Dependencies ... -->
+</dependencyManagement>
+```
+
+
+
+Maven'da `help:effective-pom` komutu girilirse bize projemizin parent ve transitive dependency'ler dahil bütün pom içeriğini gösterir. Yani maven komut satırı uygulaması yüklüyse `mvn help:effective-pom` konsola effective pom'u basar.
+
+---
+
+Projemize `spring-boot-starter-web` bağımlılığını ekleyelim:
+
+```xml
+<dependencies> 
+    <!-- Other Dependencies ... -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <!-- Other Dependencies ... -->
+<dependencies> 
+```
+
+ardından effective pom'a bakalım:
+
+```xml
+<dependencies> 
+    <!-- Other Dependencies ... -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+        <version>3.5.5</version>
+        <scope>compile</scope>
+    </dependency>
+    <!-- Other Dependencies ... -->
+<dependencies> 
+```
+
+Projenin pom.xml dosyasında `spring-boot-starter-web` için versiyon bilgisi belitmememize rağmen effective-pom içinde bu bilgiyi görebiliyoruz. Çünkü parent'taki `dependencyManagement` içinde bu bağımlılık için:
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+    <version>3.5.5</version>
+</dependency>
+```
+
+tanımlanmış. Yani `spring-boot-starter-web` kullanılacaksa bunun versiyonu 3.5.5 olacak demektir.
+
+* Parent'tan gelen dependency'ler yada versiyon bilgileri projemizin pom'unda ezilebilir. Yani `dependencies` altına bir bağımlılık eklerken versiyon belirtirsek bizim belirttiğimiz versiyon kullanılacaktır. Ya da yine projemizin pom'unda `dependencyManagement` altında bağımlılık için versiyon bilgilerini belirtirsek projemizde `dependencies` altına ilgili bağımlılık eklendiğinde o versiyon kullanılacaktır.
 
