@@ -1669,7 +1669,7 @@ Spring Boot kullanmadan önce Spring projelerimizde bazı zorluklar ve vakit ala
 
 * NFR (Non-Functional Requirements): Loglama, Error Handling, Monitoring gibi fonksiyonel olmayan özellikleri elle ayarlamalı ve implemente ediyorduk.
 
-*pom.xml, web.xml, context.xml* gibi dosyalarda uygulamayı konfigüre edip ardından NFR'ı da implemente ederek geliştirme yapmak hiç kolay değildi ve bunları her bir proje için baştan yapıyorlardı. Spring Boot ile birlikte bunlar son buşdu denebilir.
+*pom.xml, web.xml, context.xml* gibi dosyalarda uygulamayı konfigüre edip ardından NFR'ı da implemente ederek geliştirme yapmak hiç kolay değildi ve bunları her bir proje için baştan yapıyorlardı. Spring Boot ile birlikte bunlar son buldu denebilir.
 
 
 
