@@ -1727,3 +1727,170 @@ public class CourseController {
 
 `@RestController` sayesinde class'ın atılacak rest isteklerine duyarlı hale gelemsi sağlandı ve `@RequestMapping` ile işaretlenen metot belirtilen endpoint'e atılan isteğe cevap verecek şekilde ayarlandı. Dönülecek Response ise `List<Courses>` olarak belirtildi ve aynı türde cevap metot içinde dönüldü.
 
+---
+
+### Spring Boot sayesinde
+**Hızlı Geliştirme;**
+* **Spring Initializr**: Spring Boot projelerini kolayca başlatmaya yarar.
+* **Spring Boot Starter Projects**: Starter projeler yapmak istediğimiz işte bize lazım olan bağımlılıkları topluca verir. Örneğin spring-boot-starter-web sayesinde spring-web, spring-webmvc, tomcat, json vb bağımlılıklar elimizin altında hazır projeye dahil edilmiş olur.
+* **Spring Boot Auto Configuration**: Class-path'te bulunan bağımlılıklara göre otamatik konfigürasyonlar oluşturur.
+* **Spring Boot Dev Tools**: Uygulamanın çalıştığı server'ı yeniden başlatmadan kodda değişikler yapmayı sağlar ve böylece geliştirme süreci hızlanır.
+
+ve
+
+**Production-ready;** Canlı ortamda ihtiyaç duyduğumuz özellikleri sağlar.
+* **Logging**
+* **Different Configuration for Different Environments**
+    * Profiles, Configuration Properties
+* **Monitoring**: (Spring Boot Actuator): Uygulamanın performansı, ne kadar RAM kullanmış vb metrikler için.
+
+gibi avantajlar sağlarız.
+
+---
+
+### Starters
+Spring Boot Starter projeleri farklı gereksinimler için bağımlılık tanımlayıcılardır denebilir. (dependency descriptors for different features)
+
+* Web uygulamaları REST API'ler için Spring Boot starter Web
+* Unit Test için Spring Boot Starter Test
+* JPA ile veritabanı işlemleri için Spring Boot Starter JPA
+* JDBC ile vefritabanı işlemleri için Spring Boot Starter JDBC
+* Web uyhulamalarının ya da REST API'lerin güvenliği için Spring Boot Starter Security
+
+kullanılabilir. Böylece ilgili iş için ihtiyaç duyulan bağımlılıklar Spring Boot Starter projeleri tarafından önden tanımlı olarak projeye dahil edilir.
+
+Peki sadece gerekli bağımlılıklara sahip olmak yeterli mi? Hayır, onları konfigüre etmek, yapılandırmak da gerekli.
+
+---
+
+### Spring Boot AutoConfiguration
+Projemize birçok bağımlılı Spring Boot Starter projeleri sayesinde kolayca ekledik. Ancak bu bağımlılıkların yapılandırılması gerekecektir. Spring Boot Autoconfiguration bize bağımlılıklar için varsayılan yapılandırmalar sunar. Bu yapılandırmalar bağımlılıklar projemizde bulunuyorsa etkindir.
+
+Bununlar birlikte vrasayılan konfigürasyonları ezebiliriz. Bunun için application properties/yml ya da konfigürasyon class'ları kullanılabilir.
+
+Spring boot ile projemize Spring Boot Starter Auto Configuration da eklenmiş olur:
+
+![Spring Boot Auto Configuration JAR img](/images/autoConfiguration_image1.png)
+
+Burada çeşitli bağımlıklar için varsayılan konfigürasyonlar yer aldığı classlar ilişkili paketlerde yer alır:
+![Spring Boot Auto Configuration packages](/images/autoConfiguration_image2.png)
+
+
+Örneğin web uygulamaları ve REST API geliştirmek için gerekli bağımlılıklara dair yapılandırmalar `org.springframework.boot.autogonfigure.web` altında yer alacaktır:
+
+![Spring Boot Auto Configuration web](/images/autoConfiguration_image3.png)
+
+Şimdi `org.springframework` için log seviyesini debug yapalım ve logları inceleyelim.
+
+> Varsayılan log seviyesi INFO/info.
+
+```properties
+log.level.org.springframework=DEBUG
+```
+
+Uygulama başlatılınca loglarda `CONDITIONS EVALUATION REPORT` başlığı altında `Positive matches:` ve `Negative matches:` şöyle uzunca bir çıktı göreceğiz (burada yalnıca bir kısmı var):
+
+```teminal
+===========================
+CONDITIONS EVALUATION REPORT
+============================
+
+
+Positive matches:
+-----------------
+
+   AopAutoConfiguration matched:
+      - @ConditionalOnBooleanProperty (spring.aop.auto=true) matched (OnPropertyCondition)
+
+   AopAutoConfiguration.ClassProxyingConfiguration matched:
+      - @ConditionalOnMissingClass did not find unwanted class 'org.aspectj.weaver.Advice' (OnClassCondition)
+      - @ConditionalOnBooleanProperty (spring.aop.proxy-target-class=true) matched (OnPropertyCondition)
+
+   ApplicationAvailabilityAutoConfiguration#applicationAvailability matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.availability.ApplicationAvailability; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   DispatcherServletAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.web.servlet.DispatcherServlet' (OnClassCondition)
+      - found 'session' scope (OnWebApplicationCondition)
+
+   DispatcherServletAutoConfiguration.DispatcherServletConfiguration matched:
+      - @ConditionalOnClass found required class 'jakarta.servlet.ServletRegistration' (OnClassCondition)
+      - Default DispatcherServlet did not find dispatcher servlet beans (DispatcherServletAutoConfiguration.DefaultDispatcherServletCondition)
+
+   DispatcherServletAutoConfiguration.DispatcherServletRegistrationConfiguration matched:
+      - @ConditionalOnClass found required class 'jakarta.servlet.ServletRegistration' (OnClassCondition)
+      - DispatcherServlet Registration did not find servlet registration bean (DispatcherServletAutoConfiguration.DispatcherServletRegistrationCondition)
+
+   DispatcherServletAutoConfiguration.DispatcherServletRegistrationConfiguration#dispatcherServletRegistration matched:
+      - @ConditionalOnBean (names: dispatcherServlet types: org.springframework.web.servlet.DispatcherServlet; SearchStrategy: all) found bean 'dispatcherServlet' (OnBeanCondition)
+
+   EmbeddedWebServerFactoryCustomizerAutoConfiguration matched:
+      - @ConditionalOnWebApplication (required) found 'session' scope (OnWebApplicationCondition)
+      - @ConditionalOnWarDeployment the application is not deployed as a WAR file. (OnWarDeploymentCondition)
+
+      ...
+      ...
+      ...
+
+Negative matches:
+-----------------
+
+   ActiveMQAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'jakarta.jms.ConnectionFactory' (OnClassCondition)
+
+   AopAutoConfiguration.AspectJAutoProxyingConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'org.aspectj.weaver.Advice' (OnClassCondition)
+
+   ArtemisAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'jakarta.jms.ConnectionFactory' (OnClassCondition)
+
+   BatchAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'org.springframework.batch.core.launch.JobLauncher' (OnClassCondition)
+
+   Cache2kCacheConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'org.cache2k.Cache2kBuilder' (OnClassCondition)      
+
+```
+
+#### Negative Matches ve Positive
+
+Negative matches: auto-configure edilmeyenler.
+Positive matches: auto-configure edilenler.
+
+Örneğin positive match olan `DispatcherServletAutoConfiguration` için çıktı şöyleydi:
+
+```terminal
+   DispatcherServletAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.web.servlet.DispatcherServlet' (OnClassCondition)
+      - found 'session' scope (OnWebApplicationCondition)
+```
+
+IntellJ Idea'da `CTRL + N` ile `DispatcherServletAutoConfiguration` class'ını aratalım. Bu class'ın `org.springframework.boot.autoconfigure.web.servlet` paketi altında çıktığını göreceğiz.
+
+```java
+@AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)
+@AutoConfiguration(after = ServletWebServerFactoryAutoConfiguration.class)
+@ConditionalOnWebApplication(type = Type.SERVLET)
+@ConditionalOnClass(DispatcherServlet.class)
+public class DispatcherServletAutoConfiguration {
+
+    // some source codes ...
+}
+```
+
+Buradaki `@ConditionalOnWebApplication(ype = Type.SERVLET)` ve `@ConditionalOnClass(DispatcherServlet.class)` annotasyonları hangi şartlarda bu konfigürasyonların kullanılcağını ifade eder. İlki web uygulaması ya da REST API'ler için konfigürasyonların enabled olduğunu söyler. İkincisi de `DispatcherServlet.class` classpath'te ise konfigürasyonların enabled olduğunu söyler.
+
+> DispatcherServletAutoConfiguration Class'ının comment'i şöyle:
+>
+> Auto-configuration for the Spring DispatcherServlet. Should work for a standalone application where an embedded web server is already present and also for a deployable application using SpringBootServletInitializer.
+
+Biz Spring Boot Starter Web'i pom'a eklediğimizden aslında bu koşullar sağlanmış durumda. Dolayısıyla Spring Boot Auto Configure bizim yerimize bu işle iligli class'ları varsayılan değerlerle konfigüre edip hazır halde bize sunar.
+
+Örneğim `ErrorMvcAutoConfiguration` class'ı da bize varsayılan hata sayfasının konfigürasyonunu verir. Bir hata varsa yönlendirilen aşağıdaki sayfa bu konfigürasyon sayesindedir.Yani:
+
+![Spring Boot Auto Configuration ErrorMvcAutoConfiguration](/images/autoConfiguration_image4.png)
