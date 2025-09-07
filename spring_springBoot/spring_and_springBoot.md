@@ -2134,3 +2134,81 @@ Mesela `management.endpoints.web.exposures.include=health,metrics`  gibi.
 
 ## Jdbc, Spring Jdbc, Spring JPA, Spring Data JPA
 Kod farklılıklarını yaz...
+
+---
+
+# Spring MVC
+Tarayıcıdan istek atılır.
+Server isteği ele alır ve cevap oluşturur.
+Oluşturulan cevap istemciye iletilir.
+
+MVC'de belirli bir endpoint'e atılan istek ilgili Controller class'ının ilgili metotuna yönlendirilir. Eğer metot bir view(html, jsp vb.) dönüyorsa, yani o view'ın logical name'ini, bu kaynak projemizde bulunup döndürülür.
+
+```java
+@Controller
+public class HomeController {
+
+	@RequestMapping("/home")
+	public String home(@RequestParam String name, ModelMap model) {
+
+		model.put("name", name);
+		
+		return "home";
+	}
+}
+```
+
+resources klasörü altında home.jsp, html vb varsa bunu dönecektir.
+Spring'in bu view dosyasını nerede bulacağı ve dosyanın uzantısı ayarlanabilir:
+
+```properties
+spring.mvc.view.prefix=/WEB-INF/jsp/
+spring.mvc.view.suffix=.jsp
+```
+Yani `/WEB-INF/jsp/` klasörü altında `.jsp` uzantısıyla biten `home` adında bir dosya varsa onu return eder.
+
+> View yerine return edilen değeri olduğu gibi dönmesi için `@ResponseBody` annotasyonuyla metodu işaretleyebiliriz.
+
+*Bu gelişmiş yapıdan önce durum nasıldı?*
+
+### Model 1 Arch:
+Tüm logic (view logic, flow logic, queries to DB) View(JSPs, ...vb) içindeydi.
+
+			---> JSP1 ---
+Browser	--|              |---> Model.
+			---> JSP2 ---
+
+
+### Model 2 Arch:
+İşin içine biraz seperation of concerns ekleyerek MVC ile yani Model View Controller yapısıyla geliştirmeler yapılmış.
+
+Model: Data to generate the view
+View: Show information to user
+Controller: Controls the flow (here the Servlets are our controllers)
+
+
+                           ---> View1 --> Model
+			---> Servlet1 |---
+Browser	--|                   |----------> Model
+			---> Servlet2 |---
+			               ---> View2 --> Model
+
+* Peki Controller'lar için ortak bir özellik eklemek istersek. Mesela istek ele alınmadan önce kullanıcı tanımlı mı ve yetkileri var mı gibi.
+
+### Model 3 Arch:
+Burada bir önceki konsepte ek olarak tüm isteklerin merkezi bir Controller'dan geçerek uygulamaya girmesini sağlıyoruz ve bu Controller'ın adına da *Front Controller* diyoruz.
+
+Front Controller, Controller ve View'ların akışını kontrol eder. Bunun yanında uygulanmak istenen ortak özellikler de burada düzenlenebilir.
+
+### Spring MVC Front Controller - Dispatcher Servlet
+[Servlet Engine](https://miro.medium.com/v2/resize:fit:1100/format:webp/1*GG2KJLTnvmqpTQDRJHaecQ.png)
+
+A: HTTP isteği alınır.
+B: HTTP isteği işlenir:
+	* B1: İsteğin atıldığı URL'e göre doğru Controller metodu tanımlanır.
+	* B2: Controller metodu çalıştırılır. Metot modeli ve view'ın adını döner.
+	* B3: ViewResolver kullanılarak view adına göre doğru View tanımlanır.
+	* B4: View kullanılır (Modeldeki bilgilerle birlikte UI oluşturulur).
+C: HTTP cevabı dönülür.
+
+Dispatcher Servlet bu süreci Front Controller olarak yönetir.
