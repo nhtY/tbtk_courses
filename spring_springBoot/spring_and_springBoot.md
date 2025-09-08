@@ -1899,7 +1899,7 @@ Biz Spring Boot Starter Web'i pom'a eklediğimizden aslında bu koşullar sağla
 
 Örneğim `ErrorMvcAutoConfiguration` class'ı da bize varsayılan hata sayfasının konfigürasyonunu verir. Bir hata varsa yönlendirilen aşağıdaki sayfa bu konfigürasyon sayesindedir.Yani:
 
-![Spring Boot Auto Configuration ErrorMvcAutoConfiguration](/images/autoConfiguration_image4.png)
+![Spring Boot Auto Configuration ErrorMvcAutoConfiguration](./images/autoConfiguration_image4.png)
 
 
 Ayrica Spring Boot Starter Web ile gelen bağımlılıklardan aşağıdakiler de Spring Boot Auto configuration ile varsayılan özelliklerle yapılandırılırlar:
@@ -2174,41 +2174,40 @@ Yani `/WEB-INF/jsp/` klasörü altında `.jsp` uzantısıyla biten `home` adınd
 ### Model 1 Arch:
 Tüm logic (view logic, flow logic, queries to DB) View(JSPs, ...vb) içindeydi.
 
-			---> JSP1 ---
-Browser	--|              |---> Model.
-			---> JSP2 ---
+<img src="./images/model1_arch.excalidraw.svg" alt="Description" style="height:auto;width:auto;">
 
 
 ### Model 2 Arch:
-İşin içine biraz seperation of concerns ekleyerek MVC ile yani Model View Controller yapısıyla geliştirmeler yapılmış.
+İşin içine biraz seperation of concerns ekleyerek MVC ile yani **Model-View-Controller** yapısıyla geliştirmeler yapılmış.
 
 Model: Data to generate the view
+
 View: Show information to user
+
 Controller: Controls the flow (here the Servlets are our controllers)
 
 
-                           ---> View1 --> Model
-			---> Servlet1 |---
-Browser	--|                   |----------> Model
-			---> Servlet2 |---
-			               ---> View2 --> Model
+<img src="./images/model2_arch.excalidraw.svg" alt="Description" style="height:auto;width:auto;">
 
-* Peki Controller'lar için ortak bir özellik eklemek istersek. Mesela istek ele alınmadan önce kullanıcı tanımlı mı ve yetkileri var mı gibi.
+* Peki Controller'lar için ortak bir özellik eklemek istersek. Mesela istek ele alınmadan önce kullanıcı tanımlı mı ve yetkileri var mı gibi (authentication-authorization).
 
 ### Model 3 Arch:
 Burada bir önceki konsepte ek olarak tüm isteklerin merkezi bir Controller'dan geçerek uygulamaya girmesini sağlıyoruz ve bu Controller'ın adına da *Front Controller* diyoruz.
 
+<img src="./images/model3_arch.excalidraw.svg" alt="Description" style="height:auto;width:auto;">
+
 Front Controller, Controller ve View'ların akışını kontrol eder. Bunun yanında uygulanmak istenen ortak özellikler de burada düzenlenebilir.
 
 ### Spring MVC Front Controller - Dispatcher Servlet
-[Servlet Engine](https://miro.medium.com/v2/resize:fit:1100/format:webp/1*GG2KJLTnvmqpTQDRJHaecQ.png)
+![Servlet Engine](https://miro.medium.com/v2/resize:fit:1100/format:webp/1*GG2KJLTnvmqpTQDRJHaecQ.png)
 
-A: HTTP isteği alınır.
-B: HTTP isteği işlenir:
-	* B1: İsteğin atıldığı URL'e göre doğru Controller metodu tanımlanır.
-	* B2: Controller metodu çalıştırılır. Metot modeli ve view'ın adını döner.
-	* B3: ViewResolver kullanılarak view adına göre doğru View tanımlanır.
-	* B4: View kullanılır (Modeldeki bilgilerle birlikte UI oluşturulur).
-C: HTTP cevabı dönülür.
+* A: HTTP isteği alınır.
+* B: HTTP isteği işlenir:
+    * B1: İsteğin atıldığı URL'e göre doğru Controller metodu tanımlanır.
+    * B2: Controller metodu çalıştırılır. Metot modeli ve view'ın adını döner.
+    * B3: **ViewResolver** kullanılarak view adına göre doğru View tanımlanır.
+    * B4: View kullanılır (Modeldeki bilgilerle birlikte UI oluşturulur).
+* C: HTTP cevabı dönülür.
 
-Dispatcher Servlet bu süreci Front Controller olarak yönetir.
+`Dispatcher Servlet` bu süreci Front Controller olarak yönetir.
+
