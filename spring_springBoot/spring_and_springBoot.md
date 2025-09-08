@@ -1663,7 +1663,7 @@ Yani snapshot'tan milestone'a, oradan relase candidate'e ve en sonunda relase'e 
 Spring Boot kullanmadan önce Spring projelerimizde bazı zorluklar ve vakit alan işler vardı:
 * Dependency Management: Bir web uygulaması geliştirirken birçok bağımlılığı konfigure etmek gerekiyordu **(pom.xml)**. Spring framework, Spring MVC, JSON binding, log4j gibi bağımlılıkları ve onların birbiriyle uyumlu versiyonlarını projemize dahil etmeli ve versiyonlarını yönetmeliydik. Test için mockito, junit ...vb gibi gerekli tüm dependency'ler yüklenmeliydi. Yani daha başlangıçta bağımlılıklarla ilgili birçok iş vardı.
 
-* w*eb.xml**: Örneğin bir web uygulamsı için web.xml dosyasında DispatcherServlet'i Spring MVC konfigüre edilmelidydi.
+* **web.xml**: Örneğin bir web uygulamsı için web.xml dosyasında DispatcherServlet'i Spring MVC konfigüre edilmelidydi.
 
 * Spring Confiuration: Spring'in kendisini de konfigüre etmeliydik **(context.xml)**. Component Scan, View Resolver vb..
 
@@ -1674,10 +1674,16 @@ Spring Boot kullanmadan önce Spring projelerimizde bazı zorluklar ve vakit ala
 ### Starting up a new Spring Boot Project
 Spring initializr ile online olarak yeni bir spring projesi başlatmak ve dilediğimiz bağımlılıkları listeden seçerek eklemek çok kolay. Bununla birlikte eğer bir IDE kullanılıyorsa Spring Tool Suite de kullanılabilir.
 
+Projemizi IDE'de açtığımızda klasör yapısı ve eklediğimiz bağımlılıklarla kod yazmaya hazır olduğunu görürüz. Bununla birlike main metodunun bulunduğu class'ımızın `@SpringBootApplication` annotasyonu ile işaretli olduğunu görürüz.
+
+> @SpringBootApplication annotation is a combination of 3 annotations: @SpringBootConfiguration + @EnableAutoConfiguration + @ComponentScan
+
 > REST API geliştireceksek Spring Web'i bağımlılıklara eklemeyi unutmayalım. Bu bağımlılık eklendiyse uygulamayı başlatınca tomcat started at port 8080 gibi bir çıktı göreceğiz.
 
 Basit bir REST controller yazalım ve /courses endpoint'ine istek atıldığında bir dizi kursun bilgisini kullanıcıya iletsin.
-Tarayıcıda http://localhost:8080/courses'a istek atınca şöyle bir çıktı almaya çalışalım: 
+Tarayıcıda http://localhost:8080/courses'a istek atınca şöyle bir çıktı almaya çalışalım:
+
+
 ```json
 [
     {
@@ -1894,3 +1900,315 @@ Biz Spring Boot Starter Web'i pom'a eklediğimizden aslında bu koşullar sağla
 Örneğim `ErrorMvcAutoConfiguration` class'ı da bize varsayılan hata sayfasının konfigürasyonunu verir. Bir hata varsa yönlendirilen aşağıdaki sayfa bu konfigürasyon sayesindedir.Yani:
 
 ![Spring Boot Auto Configuration ErrorMvcAutoConfiguration](/images/autoConfiguration_image4.png)
+
+
+Ayrica Spring Boot Starter Web ile gelen bağımlılıklardan aşağıdakiler de Spring Boot Auto configuration ile varsayılan özelliklerle yapılandırılırlar:
+
+* Dispatcher Servlet (DispatcherServletAutoConfiguration)
+
+* Embedded Servlet Container - varsayılan Tomcat (EmbeddedWebServerFactoryCustomizerAutoConfiguration)
+
+* Varsayılan Hata sayfaları (ErrorMvcAutoConfiguration)
+
+* Bean <--> JSON dönüşümleri (JacksonHttpMessageConverterConfiguration)
+
+---
+
+### Spring Boot DevTools
+Geliştirici için üretkenliği artıran bir starter projesi. Projemize eklediğimizde kodda yapılan herhangi bir değişiklikten sonra uygulamayı durdurup tekrar başlatmak için uğraşmayız ve uygulamanın ayağa kalkması için görece daha az bekleriz. 
+
+Kod dosyalarında, property dosyalarında ya da static içeriklerde yapılan değişiklikler bu otomatik yeniden başlatmayı tetikler.
+
+Ancak bir istisna var o da pom.xml dosyası. Pom'da bir güncelleme olursa elle yeniden başlatmadan bunun etkisini göremeyiz.
+
+---
+
+### Configuration using Profiles
+Uygulamamız yazılım geliştirme sürecinde farklı ortamlarda çalışacağından farklı yapılandırmalara ihtiyacımız var.
+
+Örneğin dev, qa(test), stage ve prod gibi ortamlarımız olabilir. Bu ortamlarda farklı veritabanlarına bağlanırız. Test ya da geliştirme ortamlarında değişiklikleri sınarken prod ortamdaki veritabanıyla çalışmak ve geri dönülmez hatalara yol açmak istemeyiz.
+
+#### application.properties/yml ile Profiller
+Farklı profiller için farklı yaınlandırmalar gerekir ve dolayısıyla bu yapılandırmaları yaptığımız application.properties/yml dosyalarının da içeriği farklı olacaktır. 
+
+application.properties şöyle olsun: 
+
+```properties
+logging.level.org.springframework=debug
+```
+
+dev içinse application-dev.properties adında başka bir dosya yazalım:
+
+```properties
+logging.level.org.springframework=trace
+```
+
+prod ortam içinse application-prod.properties adında başka bir dosyamız olsun:
+
+```properties
+logging.level.org.springframework=info
+```
+
+Herhangi bir profil seçili değilken application.properties dosyasına göre uygulamamız çalışacaktır. Ancak istersek bu dosya içinde aktif profili ifade ederek diğer dosyaların içeriğinin kullanılmasını sağlayabiliriz.
+
+Bunun için application.properties dosyasını şöyle güncelleyelim:
+
+```properties
+logging.level.org.springframework=debug
+
+spring.profiles.active=prod
+```
+
+Artık application-prod.properties dosyası okunur ve log seviyesi orada yazdığı üzere info olur.
+
+> Log seviyesi olarak ne seçilirse o seviye altındakiler dahil olmak üzere loglar konsola basılır.
+>
+> log seviyeleri yukarıdan aşağı şöyledir:
+> * trace
+> * debug
+> * info
+> * warning
+> * error
+> * off
+>
+> Yani log level olarak debug seçilirse debug dahil altındaki diğer seviyelerdeki türden loglar basılır (debug, info, warning, error).
+
+---
+
+### @ConfigurationProperties anotasyonu
+Diyelim ki ekibimizle köprü uygulama denen türden bir uygulama geliştiryoruz ve birçok farklı servisi çağırıp sonuçlarını uygulamamızın client'ına aktarıyoruz. Çağıracağımız servislerin de test, uat ve prod gibi ortamlardaki url ve credential bilgileri ortama göre değişsin.
+
+Bu senaryoya göre uygulamamız içinde bu tarz değişkenleri tutan class'larımız olsun ve ortama göre bu class'ın tuttuğu değerler değişsin.
+
+```java
+@ConfigurationProperties(prefix = "currency-service")
+@Component
+public class CurrencyServiceConfiguration {
+	private String url;
+	private String username;
+	private String key;
+
+	// getters and setters ...
+}
+```
+
+Bu haliyle class'ımızın url, username ve key bilgileri properties dosyasında `currency-service` ile başlayan uygun isimli alanlardan alınıp set edilecek. Böylece mesela Currency API'ye istek atarken bu bilgileri uygulama içinde kullanabileceğiz. @Component sayesinde de Spring istediğimiz yerde bize autowire ile bu class'ın instance'ını verecek.
+
+Şimdi `application.properties` içinde bu alanları tanımlayıp değer verelim:
+
+```properties
+logging.level.org.springframework=trace
+
+currency-service.url=http://default-url.currency.com
+currency-service.username=defaultusername
+currency-service.key=default
+
+```
+
+Örneğin bir contoller'da bu instance'ı return edebiliriz, her ne kadar amaç bu olmasa da kullanım örneği olsun diye:
+
+```java
+@RestController
+public class CurrencyController {
+	@Autowired
+	private CurrencyServiceConfiguration configuration;
+
+	@RequestMapping("/currencyServiceInfo")
+	public CurrencyServiceConfiguration getConfigs() {
+		return configuration;
+	}
+}
+```
+
+İstek atıldığında application.properties içindeki bilgilerle set edilmiş nesnemize erişebiliriz:
+
+```json
+{
+	"url": "http://default-url.currency.com",
+	"username": "defaultusername",
+	"key": "default"
+}
+```
+
+Diyelim ki profil değişti ve test ortama aldık kodumuzu. Bu durumda o currency servisi yazan ekibin bize verdiği test ortamdaki API'lerine istek atacak olalım. Bu durumda url, username ve key bilgileri değişmeli.
+
+Test ortam için `application-test.properties` adında bir dosya yazalım ve bu yeni değerleri burada ifade edelim:
+
+```
+logging.level.org.springframework=debug
+
+currency-service.url=http://dev-url.currency.com
+currency-service.username=devusername
+currency-service.key=dev
+```
+
+Ayrıca application.properties içinde aktif profili `dev` yapalım:
+
+```properties
+logging.level.org.springframework=trace
+
+spring.profiles.active=dev
+
+currency-service.url=http://default-url.currency.com
+currency-service.username=defaultusername
+currency-service.key=default
+
+```
+
+`application-dev.properties` içinde aynı key'lerle tanımlı özellikler olduğundan varsayılan özelliklerimiz ezilir ve yeni değerler class'ımızdaki ilgili alanlara atanır. İstek atınca şunu alırız:
+
+```json
+{
+	"url": "http://dev-url.currency.com",
+	"username": "devusername",
+	"key": "dev"
+}
+```
+
+### Deploy Simply with Embedded Web Servers in JAR
+Eskiden bir uygulamaı deploy etmek, son haliyle web sunucusunda(yazılım olan sunucu) ayağa kaldırıp hizmete almak, biraz daha karışık bir süreçmiş:
+
+* Java'yı indir
+* Web/Application Server'ı indir (Tomcat/Weblogic/WenSphere)
+* Uygulamayı WAR (Web ARchive) olarak deploy et.
+
+Ama embedded server ile bu iş çok daha kolay. Uygulamamız için içinde server'ın da olduğu bir JAR dosyası çıktısı alırız. Java yüklü herhangi bir makinede bu jar dosyasını çalıştırdığımızda uygulama ayakta ve hizmete hazır.
+
+* Java'yı indir
+* JAR dosyanı çalıştır :)
+
+> Embedded server örnekleri şunlardır: spring-boot-starter-tomcat, spring-boot-starter-jetty, spring-boot-starter-undertow
+
+Biz projemize `spring-boot-starter-web` i eklediğimizden içinde `spring-boot-starter-tomcat` de geliyor. Dolayısıyla uygulamamızı `maven install` komutuyla bir jar dosyasına sıkıştırdığımızda tomcat ile ilgili jar dosyaları da orada bulunur. Ardından `java -jar our-spring-boot-app-1.0.0-SNAPSHOT.jar` komutuyla uygulamayı ayağa kaldırırız. Ve hazır :)
+
+---
+
+### Spring Boot Actuator
+Actuator ile:
+
+* Canlı ortamda uygulamayı izler ve yönetiriz.
+* Bize birçok enrpoint sunar. Örneğin:
+	* beans: ApplicationContext'te oluşturlan tüm bean'lar ve onlara dair detaylar.
+	* health: Uygulama ayakta mı
+	* metrics: Uygulama metrikleri (http.server.requests, application.ready.time, jvm.buffer.memory.used gibi istatistik veriler vb.)
+	* mappings: Request mapping ile ilgili detaylar .
+	* env: ortamla, ortam değişkenleriyle ilgili bilgiler.
+
+`spring-boot-starter-actuator` ı bağımlılık olarak eklemek yeterli. `http://localhost:8080/actuator` a istek atarsak orada bize tüm bu detaylara erişebileceğimiz endpoint'leri listeler.
+
+Başlangıçta varsayılan olarak /actuator, /actuator/health, /actuator/health/{\*path} gibi endpoint'leri verir. Yani sayısı azdır.
+
+Tüm actuator'ın sunduğu tüm endpoint'leri görmek için application.properties içiinde `management.endpoints.web.exposures.include=*` yapılandırması kullanılabilir ancak bu uygulamamızın çok kaynak tüketmesine yol açacaktır.
+
+Bunun yerine hangi değerlere, detaylara actuator üzerinden erişmek istiyorsak onlarla ilişkili endpointlerini erişime açmasını sağlayabiliriz. 
+
+Mesela `management.endpoints.web.exposures.include=health,metrics`  gibi.
+
+---
+
+### Spring Boot vs Spring MVC vs Spring
+
+#### Spring Framework: Dependency Injection (Core, Basic)
+- `@Component`, `@Autowired` : Component Injection
+- Just Dependency Injection is **NOT sufficient** (You need other frameworks to build apps)
+- **Spring Modules and Spring Projects**: Extend Spring Core (Gigantic Ecosystem)
+  - Provide Good Integrations (Hibernate, JPA, JUnit & Mockito for Unit Testing)
+
+
+#### Spring MVC (a Spring Module): Simplify building web apps and REST API
+- Building web applications with Struts was very complex
+- `@Controller`, `@RestController` (Request Mapping, Courses)
+
+
+#### Spring Boot (Spring Project): Build PRODUCTION-READY apps QUICKLY
+- **Starter Projects**: Make it easy to build a variety of applications
+- **Auto Configuration**: Eliminate configuration to setup Spring, Spring MVC and other frameworks!
+- Enable non functional requirements(NFRs):
+	- **Actuators**: Enables Advanced Monitoring of applications
+	- **Embedded Server**: No need for separate application servers
+	- **Logging and Error Handling**
+	- **Profiles and ConfigurationProperties**
+
+
+---
+
+## Jdbc, Spring Jdbc, Spring JPA, Spring Data JPA
+Kod farklılıklarını yaz...
+
+---
+
+# Spring MVC
+Tarayıcıdan istek atılır.
+Server isteği ele alır ve cevap oluşturur.
+Oluşturulan cevap istemciye iletilir.
+
+MVC'de belirli bir endpoint'e atılan istek ilgili Controller class'ının ilgili metotuna yönlendirilir. Eğer metot bir view(html, jsp vb.) dönüyorsa, yani o view'ın logical name'ini, bu kaynak projemizde bulunup döndürülür.
+
+```java
+@Controller
+public class HomeController {
+
+	@RequestMapping("/home")
+	public String home(@RequestParam String name, ModelMap model) {
+
+		model.put("name", name);
+		
+		return "home";
+	}
+}
+```
+
+resources klasörü altında home.jsp, html vb varsa bunu dönecektir.
+Spring'in bu view dosyasını nerede bulacağı ve dosyanın uzantısı ayarlanabilir:
+
+```properties
+spring.mvc.view.prefix=/WEB-INF/jsp/
+spring.mvc.view.suffix=.jsp
+```
+Yani `/WEB-INF/jsp/` klasörü altında `.jsp` uzantısıyla biten `home` adında bir dosya varsa onu return eder.
+
+> View yerine return edilen değeri olduğu gibi dönmesi için `@ResponseBody` annotasyonuyla metodu işaretleyebiliriz.
+
+*Bu gelişmiş yapıdan önce durum nasıldı?*
+
+### Model 1 Arch:
+Tüm logic (view logic, flow logic, queries to DB) View(JSPs, ...vb) içindeydi.
+
+			---> JSP1 ---
+Browser	--|              |---> Model.
+			---> JSP2 ---
+
+
+### Model 2 Arch:
+İşin içine biraz seperation of concerns ekleyerek MVC ile yani Model View Controller yapısıyla geliştirmeler yapılmış.
+
+Model: Data to generate the view
+View: Show information to user
+Controller: Controls the flow (here the Servlets are our controllers)
+
+
+                           ---> View1 --> Model
+			---> Servlet1 |---
+Browser	--|                   |----------> Model
+			---> Servlet2 |---
+			               ---> View2 --> Model
+
+* Peki Controller'lar için ortak bir özellik eklemek istersek. Mesela istek ele alınmadan önce kullanıcı tanımlı mı ve yetkileri var mı gibi.
+
+### Model 3 Arch:
+Burada bir önceki konsepte ek olarak tüm isteklerin merkezi bir Controller'dan geçerek uygulamaya girmesini sağlıyoruz ve bu Controller'ın adına da *Front Controller* diyoruz.
+
+Front Controller, Controller ve View'ların akışını kontrol eder. Bunun yanında uygulanmak istenen ortak özellikler de burada düzenlenebilir.
+
+### Spring MVC Front Controller - Dispatcher Servlet
+[Servlet Engine](https://miro.medium.com/v2/resize:fit:1100/format:webp/1*GG2KJLTnvmqpTQDRJHaecQ.png)
+
+A: HTTP isteği alınır.
+B: HTTP isteği işlenir:
+	* B1: İsteğin atıldığı URL'e göre doğru Controller metodu tanımlanır.
+	* B2: Controller metodu çalıştırılır. Metot modeli ve view'ın adını döner.
+	* B3: ViewResolver kullanılarak view adına göre doğru View tanımlanır.
+	* B4: View kullanılır (Modeldeki bilgilerle birlikte UI oluşturulur).
+C: HTTP cevabı dönülür.
+
+Dispatcher Servlet bu süreci Front Controller olarak yönetir.
