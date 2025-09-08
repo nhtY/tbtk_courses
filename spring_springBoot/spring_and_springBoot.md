@@ -222,7 +222,8 @@ Spring Container = Spring Context = IoC Container: Spring Bean'larını ve onlar
 Bean factory basit bir Spring Container'dır. Application Context ise daha çok kurumsal uygulamalara hitab eder.
 
 Aşağıdaki fotoda görüleceği üzere Spring Container yazdığımız Java class'larını ve Configuration class'larını alıp birer instance'larını oluşturur. Ayrıca bu instance'ların yaşam döngüsünü yönetir.
-![Spring_IoC](./photos/Spring_IoC.png)
+
+![spring_IoC](./images/spring_IoC.png)
 
 * JPOJO vs Java Bean vs Spring Bean farkı nedir?
 
@@ -1776,15 +1777,15 @@ Bununlar birlikte vrasayılan konfigürasyonları ezebiliriz. Bunun için applic
 
 Spring boot ile projemize Spring Boot Starter Auto Configuration da eklenmiş olur:
 
-![Spring Boot Auto Configuration JAR img](/images/autoConfiguration_image1.png)
+![Spring Boot Auto Configuration JAR img](./images/autoConfiguration_image1.png)
 
 Burada çeşitli bağımlıklar için varsayılan konfigürasyonlar yer aldığı classlar ilişkili paketlerde yer alır:
-![Spring Boot Auto Configuration packages](/images/autoConfiguration_image2.png)
+![Spring Boot Auto Configuration packages](./images/autoConfiguration_image2.png)
 
 
 Örneğin web uygulamaları ve REST API geliştirmek için gerekli bağımlılıklara dair yapılandırmalar `org.springframework.boot.autogonfigure.web` altında yer alacaktır:
 
-![Spring Boot Auto Configuration web](/images/autoConfiguration_image3.png)
+![Spring Boot Auto Configuration web](./images/autoConfiguration_image3.png)
 
 Şimdi `org.springframework` için log seviyesini debug yapalım ve logları inceleyelim.
 
@@ -2211,3 +2212,6 @@ Front Controller, Controller ve View'ların akışını kontrol eder. Bunun yan�
 
 `Dispatcher Servlet` bu süreci Front Controller olarak yönetir.
 
+Alternatif olarak şu görsel de açıklayıcı olabilir:
+
+![spring_web](./images/spring_web.png)
