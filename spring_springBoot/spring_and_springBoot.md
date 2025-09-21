@@ -2159,6 +2159,21 @@ public class HomeController {
 }
 ```
 
+home.jsp ise şöyle:
+```jsp
+<html>
+	<head>
+		<title>My page</title>
+	</head>
+	<body>
+		Welcome to home page ${name}
+	</body>
+
+</html>
+```
+
+http://localhost:8080/home?name=Ahmet e GET isteği atılıca RequestParam ile alınan isim modele kaydedilir. "home" adındaki JSP bulunur. JSP içinde "name" isimli değişkene erişildiğinden modelden bu değer alınır ve sonunda sayfa dödürülecektir.
+
 resources klasörü altında home.jsp, html vb varsa bunu dönecektir.
 Spring'in bu view dosyasını nerede bulacağı ve dosyanın uzantısı ayarlanabilir:
 
@@ -2166,9 +2181,21 @@ Spring'in bu view dosyasını nerede bulacağı ve dosyanın uzantısı ayarlana
 spring.mvc.view.prefix=/WEB-INF/jsp/
 spring.mvc.view.suffix=.jsp
 ```
-Yani `/WEB-INF/jsp/` klasörü altında `.jsp` uzantısıyla biten `home` adında bir dosya varsa onu return eder.
+Yani `/WEB-INF/jsp/` klasörü altında `.jsp` uzantısıyla biten `home` adında bir dosya varsa onu return eder. (`src/main/resources/META-INF/resources/WEB-INF/jsp/home.jsp`)
 
-> View yerine return edilen değeri olduğu gibi dönmesi için `@ResponseBody` annotasyonuyla metodu işaretleyebiliriz.
+Tarayıcıda inspect > Network > Doc kısmına bakarsak /home'a atılan isteği ve karşılığında dönen jsp dosyasını görebiliriz.
+
+> View yerine return edilen değeri olduğu gibi dönmesi için `@ResponseBody` annotasyonuyla metodu işaretleyebiliriz. Yani home isimi dosyanın render edilmiş içeriği değil de direkt "home" String'ini döneceksen.
+
+> JSP'lerin tomcat'te çalışması için projeye bir bağımlılık eklenmesi gerekebilir:
+```xml
+<dependency>
+	<groupId>org.apache.tomcat.embed</groupId>
+	<artifactId>tomcat-embed-jasper</artifactId>
+	<scope>provided</scope>
+</dependency>
+```
+tomcat tarafından zaten sağlanmış olması gerektiğinden buna scope-provided dedik.
 
 *Bu gelişmiş yapıdan önce durum nasıldı?*
 
@@ -2215,3 +2242,121 @@ Front Controller, Controller ve View'ların akışını kontrol eder. Bunun yan�
 Alternatif olarak şu görsel de açıklayıcı olabilir:
 
 ![spring_web](./images/spring_web.png)
+
+---
+
+* Arayüzde form ile bir veri yollarken method belirtilmezse input olarak girilen veriler request parametresi olarak gönderilir ve url'de açıkça görülür. Bu sebeple post metodu ile gönderip request body'de tutmak daha güvenli olduğundan tavsiye edilir.
+
+```html
+<form method="post">
+	Name: <input type="text" name="name">
+	Password <input type="password" name="password">
+	<input type="submit">
+</form> 
+
+```
+
+* Belirli bir endpoint'e atılacak isteğin metodunu kısıtlamak yani sadece belirli HTTP Methodlarıyla atılan istekleri karşılamak için `@RequestMapping(name="/login", method=RequestMethod.GET)` şeklinde bir kullanım mümkün. Örneğimizde form method olarak "post" kullanacağından bunu POST olarak belirtelim
+
+```java
+@Controller
+public class LoginController {
+
+	@RequestMapping(name = "/login", method = RequestMethod.GET)
+	public String login() {
+		return "login";
+	}
+
+	@RequestMapping(name = "/login", method = RequestMethod.POST)
+	public String welcome(@RequestParam name, @RequestParam password, ModelMap model) {
+		model.put("name": name);
+		model.put("password": password);
+		return "welcome";
+	}
+}
+```
+
+Welcome sayfası içinde:
+```html
+<div>
+	Name: ${name} and Password: ${password}
+</div>
+```
+
+Eğer desteklenmeyen bir metot ile istek atılırsa HTTP 405 döner. Burada login sayfasını GET ile alırız. Kullanıcı bilgileri girilir ve POST ile /login'e body'de bilgiler gider. Model'e form'un body'sindeki veriler eklenir. Ardından welcome sayfası döndürülür.
+
+> DİKKAT burada form'un body'sinden @RequestParam ile verileri alabiliyoruz. Bunu @RequestBody ile karıştırmamak gerekir çünkü bu annotasyon JSON formatındaki body'yi işler.
+>
+> Özetle
+> @RequestParam: URL sorgu parametreleri (?key=value) veya form verileri (application/x-www-form-urlencoded) için.
+> @RequestBody: JSON, XML gibi bir isteğin gövdesindeki verileri bir nesneye dönüştürmek için.
+
+---
+
+### Sessison vs Request
+Bir değeri Model'e eklediğimizde ona JSP içinde erişebiliriz. Ancak bir JSP sayfasından başka bir sayfaya geçtiğimizde modele eklenen veriye aynen erişebilir miyiz?
+
+Yani /login'e GET isteği attık ve login sayfası geldi.
+Ardından bilgilerimizi girip /login'e POST isteği attık ve authenticate olup name bilgimizi Model'e ekleyerek /login'deyken "welcome" isimli JSP'nin içeriğini gördük. Şimdi oradan da /list-todos sayfasına geçeceğiz diyelim.
+
+```html
+<div>
+	Welcome Name: ${name}
+	<a href="list-todos">Manage</a> Your TODOs
+</div>
+```
+
+linke tıklayınca /list-todos'a istek atılacaktır ve orada name'i göstermek istiyoruz diyelim.
+
+```html
+<div>
+	TODOs of ${name} is listed here:
+	${todos}
+</div>
+```
+
+İşte bu durumda model'deki değerlerin varsayılan scope/kapsamı Request olduğundan linke tiklayınca atılacak bir sonraki request'te name değeri kaybedilir.
+
+Sayfalar arasında modeldeki değerler korunsun istersek `@SessionAtributes("nameOfVariableInSession")` annotasyonunu kullanabiliriz. Bu annotasyonu değerin set edildiği class ile kullanılacağı tüm class'larda kullanmak gerekir. Böylece ihtiyaç duyduğun yerde Model içinden bu değişkene erişilebilsin.
+
+Login olunca name'i model'e eklesin ve Session'da da bu bilgi tutulsun
+```java
+@SessionAttributes("name")
+public class LoginController {
+	// some codes ...
+		@RequestMapping(name = "/login", method = RequestMethod.POST)
+	public String welcome(@RequestParam name, @RequestParam password, ModelMap model) {
+		model.put("name": name);
+		model.put("password": password);
+		return "welcome";
+	}
+}
+```
+
+
+Ardından list-todos sayfasında da bu bilgiye erişilebilsin:
+```java
+@SessionAttributes("name")
+public class TodoController {
+	private TodoService todoService;
+	// some codes ...
+		@RequestMapping(name = "/list-todos", method = RequestMethod.GET)
+	public String listTodos(ModelMap model) {
+		List<Todo> todos = todoService.findAll();
+		model.addAttribute("todos": todos);
+		return "welcome";
+	}
+}
+```
+
+Özetle:
+
+* **Request Scope:** sadece bir request boyunca aktiftir. Requeste karşılık response dönüldükten sonra o request'te dair bilgiler Memory'den silinir.
+
+* Request Scope'ta tutulan bilgiler ileriki request'ler için kullanılamaz. 
+
+* **Session Scope:** Bilgiler birden çok request için kayıt altındadır ve erişilebilir.
+
+---
+
+TODO app notları.
