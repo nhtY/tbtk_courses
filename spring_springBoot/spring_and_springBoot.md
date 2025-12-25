@@ -2359,4 +2359,925 @@ public class TodoController {
 
 ---
 
-TODO app notları.
+TODO app notları....
+
+## SB Bölüm 14 Notları
+
+### @RestController Annotasyonu Nedir?
+
+- `@RestController`, Spring MVC’de **RESTful web servisler** geliştirmek için kullanılan bir sınıf seviyesinde annotasyondur.
+- Aslında iki annotasyonun birleşimidir:
+  - `@Controller`
+  - `@ResponseBody`
+- Bu sayede:
+  - Metotların dönüş değerleri **otomatik olarak HTTP response body**’ye yazılır.
+  - JSON / XML gibi formatlara **otomatik serileştirme** yapılır (Jackson vb. ile).
+- View (HTML, JSP, Thymeleaf) döndürmek için **kullanılmaz**.
+- REST API yazarken her metot için `@ResponseBody` yazma ihtiyacını ortadan kaldırır.
+
+---
+
+### @Controller ile Farkı
+
+- `@Controller`
+  - Genellikle **view name** döner.
+  - REST için her metotta `@ResponseBody` gerekir.
+- `@RestController`
+  - Direkt **data (JSON/XML)** döner.
+  - REST API için idealdir.
+
+---
+
+### Örnek Kullanım
+
+```java
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+
+    @GetMapping("/{id}")
+    public User getUser(@PathVariable Long id) {
+        return new User(id, "Ali");
+    }
+}
+```
+
+### @RequestMapping Annotasyonunun İşlevi Nedir?
+
+- `@RequestMapping`, **HTTP isteklerini (request)** ilgili controller sınıfına veya metoda yönlendirmek için kullanılır.
+- Bir URL path’i ile **controller/metot eşlemesi** yapar.
+- HTTP metodunu (GET, POST, PUT, DELETE vb.) tanımlayabilir.
+- Request header, parametre ve content-type gibi koşullara göre filtreleme yapabilir.
+
+---
+
+### Class Seviyesinde Kullanılır mı?
+
+- **Evet, class seviyesinde kullanılır.**
+- Class seviyesinde kullanıldığında:
+  - Controller için **ortak bir URL prefix’i** tanımlar.
+  - Alt metotlarda tanımlanan path’ler bu prefix’e eklenir.
+
+---
+
+### Class + Method Seviyesi Birlikte Kullanım
+
+```java
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+
+    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+    public User getUser(@PathVariable Long id) {
+        return new User(id, "Ali");
+    }
+}
+```
+
+### @RequestMapping(GET) ile @GetMapping Aynı mıdır?
+
+- **Evet, işlevsel olarak aynıdır.**
+- Aşağıdaki iki kullanım **eşdeğerdir**:
+
+```java
+@RequestMapping(method = RequestMethod.GET, path = "/hello-world")
+
+@GetMapping(path = "/hello-world")
+```
+`@GetMapping`, `@RequestMapping`’in GET için kısaltılmış ve daha okunabilir halidir.
+
+### Burada HelloWorldBean için getter ve setter metotları yazılmadıysa ne olur?
+
+```java
+@GetMapping(path = "/hello-world-bean")
+public HelloWorldBean helloWorldBean() {
+    return new HelloWorldBean("Hello World");
+}
+```
+
+- `HelloWorldBean` içinde **getter metotları yoksa**:
+ 	- Spring, nesneyi **JSON’a serileştiremez**.
+  	- Çünkü Jackson, alanlara **getter’lar üzerinden erişir**.
+
+- Bu durumda Spring uygun bir response formatı üretemez ve hata fırlatır: `org.springframework.web.HttpMediaTypeNotAcceptableException: No acceptable representation`
+
+- Özelte
+	- `@RestController` → Nesne JSON’a çevrilmek zorunda
+	- Getter yok → Alanlar okunamaz
+	- JSON üretilemez → **406 Not Acceptable**
+
+### HelloWorldBean atılan GET isteğine cevap olarak döner. Ancak JSON formatında olmasını sağlayan nedir?
+```java
+@GetMapping(path = "/hello-world-bean")
+public HelloWorldBean helloWorldBean() {
+    return new HelloWorldBean("Hello World");
+}
+```
+```java
+@Getter
+@Setter
+public class HelloWorldBean {
+    private String message;
+
+    public HelloWorldBean(String message) {
+        this.message = message;
+    }
+}
+```
+
+JSON Olarak Dönmesini Sağlayan Nedir?
+
+- Controller sınıfı `@RestController` olduğu için:
+  - `@ResponseBody` **otomatik olarak aktif olur**.
+- `@ResponseBody`:
+  - Metodun dönüş değerini **HTTP response body**’ye yazar.
+
+- Spring Boot, response’u JSON’a çevirmek için:
+  - **JacksonHttpMessageConverter** kullanır.
+  - Getter’lar sayesinde alanları JSON’a serileştirir.
+
+Özet Akış
+
+- `@RestController` → `@ResponseBody`
+- `HelloWorldBean` → Java Object
+- `JacksonHttpMessageConverter` → JSON
+- Sonuç:
+```json
+{ "message": "Hello World" }
+```
+
+---
+
+### Richardson Maturity Model (RMM) Nedir?
+
+- REST API’lerin **olgunluk seviyesini** ölçmek için kullanılan bir modeldir.
+- API’nin HTTP, URL ve HATEOAS kavramlarını **ne kadar doğru kullandığını** gösterir.
+- **4 seviye (Level 0–3)** içerir.
+
+---
+
+#### Level 0 – RPC (Swamp of POX)
+
+- Tek endpoint, her iş için farklı action.
+```http
+POST /api
+```
+
+```json
+{ "action": "getUser", "id": 1 }
+```
+
+#### Level 1 – Resources
+
+- Kaynaklar URL ile ayrılır.
+
+```http
+GET /users/1
+POST /users
+```
+
+#### Level 2 – HTTP Verbs
+
+- HTTP metotları doğru kullanılır.
+
+```http
+GET    /users/1
+POST   /users
+PUT    /users/1
+DELETE /users/1
+```
+
+#### Level 3 – HATEOAS
+
+- Response içinde link’ler bulunur.
+
+```http
+GET /users/1
+```
+
+```json
+{
+  "id": 1,
+  "name": "Ali",
+  "_links": {
+    "self": { "href": "/users/1" },
+    "delete": { "href": "/users/1", "method": "DELETE" }
+  }
+}
+
+```
+
+- Özet:
+	- Level 0: Tek endpoint
+	- Level 1: Resource bazlı URL
+	- Level 2: Doğru HTTP metodları
+	- Level 3: HATEOAS linkleri
+
+---
+
+### @PathVariable, @RequestParam, @RequestBody Nedir?
+
+Aşağıdaki URL ve request üzerinden açıklayalım:
+
+POST /users/5?active=true
+
+Body:
+```json
+{
+  "name": "Ali",
+  "age": 25
+}
+```
+
+```java
+@PostMapping("/users/{id}")
+public User updateUser(
+    @PathVariable Long id,
+    @RequestParam boolean active,
+    @RequestBody User user
+) { }
+
+```
+
+- Özet
+	- @PathVariable → URL path: `/{id}`
+	- @RequestParam → Query param `?active=true`
+	- @RequestBody → Request body (JSON)
+
+--- 
+
+### HTTP Response Status Code Türleri
+
+
+#### 2XX – Success (Başarılı)
+
+- **200 OK**
+  - İstek başarılı
+  - Genellikle `GET` sonrası
+
+- **201 Created**
+  - Yeni resource oluşturuldu
+  - `POST` sonrası
+  - `Location` header ile yeni kaynağın URL’i döner
+
+- **204 No Content**
+  - İşlem başarılı
+  - Response body yok
+  - `DELETE` veya `PUT` sonrası sık kullanılır
+
+---
+
+#### 3XX – Redirection (Yönlendirme)
+
+- **301 Moved Permanently**
+  - Kaynak kalıcı olarak taşındı
+
+- **302 Found**
+  - Geçici yönlendirme
+
+- **304 Not Modified**
+  - Cache kullanımı için
+
+---
+
+#### 4XX – Client Error (İstemci Hatası)
+
+- **400 Bad Request**
+  - Hatalı request (validation, format)
+
+- **401 Unauthorized**
+  - Authentication gerekli / hatalı
+
+- **403 Forbidden**
+  - Yetki yok (auth var ama izin yok)
+
+- **404 Not Found**
+  - Resource bulunamadı
+
+---
+
+#### 5XX – Server Error (Sunucu Hatası)
+
+- **500 Internal Server Error**
+  - Beklenmeyen server hatası
+
+- **502 Bad Gateway**
+  - Başka servisten hatalı cevap
+
+- **503 Service Unavailable**
+  - Server geçici olarak kapalı
+
+---
+
+Özet
+
+- 2XX → Başarılı
+- 3XX → Yönlendirme
+- 4XX → Client hatası
+- 5XX → Server hatası
+
+---
+
+### Custom Exception Status Code Davranışı
+
+```java
+.orElseThrow(() -> new UserNotFoundException("User not found"));
+```
+
+1️- @ResponseStatus OLMADAN:
+
+```java
+public class UserNotFoundException extends RuntimeException { }
+```
+
+- Spring bu exception’ı genel RuntimeException olarak ele alır.
+- Default davranış: 500 Internal Server Error
+
+2- @ResponseStatus İLE:
+
+```java
+@ResponseStatus(HttpStatus.NOT_FOUND)
+public class UserNotFoundException extends RuntimeException { }
+```
+
+- Spring, annotasyonu okuyarak HTTP status belirler.
+- Dönen status: 404 Not Found
+
+---
+
+### Exception Handling Nasıl Yapılır? (Global Exception Handling)
+
+
+#### Custom Exception (404 için)
+
+```java
+@ResponseStatus(HttpStatus.NOT_FOUND)
+public class ResourceNotFoundException extends RuntimeException {
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+}
+```
+
+#### Exception Fırlatma
+```java
+@GetMapping("/users/{id}")
+public User getUser(@PathVariable Long id) {
+    return userRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+}
+
+```
+
+#### Global Exception Handler
+```java
+@ControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorDetails> handleNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(new ErrorDetails(ex.getMessage()));
+    }
+}
+```
+
+#### Custom Error Response
+```java
+public class ErrorDetails {
+    private String message;
+    // getter / constructor
+}
+```
+
+- Özet:
+	- Custom Exception → iş kuralı hatası
+	- @ControllerAdvice → global yakalama
+	- @ExceptionHandler → exception–status eşlemesi
+	- Tek merkezden tutarlı error response
+
+---
+
+### Client’a Exception Trace Gösterilir mi? Sorun Olur mu?
+
+- **Evet, ciddi bir güvenlik sorunudur.**
+- Stack trace:
+  - Uygulama iç yapısını
+  - Class, package, method isimlerini
+  - Olası zafiyetleri
+  client’a açık eder.
+
+---
+
+#### `spring-boot-devtools` Varken Nasıl Davranır?
+
+- `spring-boot-devtools` varsa
+- Uygulama **IDE’den run** ediliyorsa
+- Default olarak trace açılabilir
+
+> Jar olarak çalıştırıldığında genellikle görünmez.
+
+---
+
+#### application.yml ile Trace Kapatma
+
+```yaml
+server:
+  error:
+    include-stacktrace: never
+```
+
+ya da
+
+```yaml
+server:
+  error:
+    include-message: never
+    include-binding-errors: never
+```
+
+Yaklaşım şöyle olmalı:
+- Client’a: Sade, kontrollü error mesajı
+- Loglara: Detaylı stack trace
+
+---
+
+### @RequestBody Validation Nasıl Yapılır?
+
+
+- DTO Üzerinde Validation
+
+```java
+public class UserDto {
+
+    @NotNull
+    @Size(min = 2, message = "Name en az 2 karakter olmalı")
+    private String name;
+}
+```
+
+- Controller'da DTO kullanımı
+```java
+@PostMapping("/users")
+public ResponseEntity<UserDto> createUser(
+        @Valid @RequestBody UserDto userDto) {
+    return ResponseEntity.ok(userDto);
+}
+```
+
+- Gereklilikler:
+	- DTO: @NotNull, @Size
+	- Controller: metot parametresinde @Valid
+	- Spring Boot: spring-boot-starter-validation bağımlılığı.
+
+- Özet
+	- Validation DTO üzerinde tanımlanır
+	- @Valid → validation’ı tetikler
+	- Şart sağlanmazsa → 400 Bad Request
+
+---
+
+### OpenAPI Nedir?
+
+- REST API’lerin **standart bir şekilde tanımlanmasını** sağlayan spesifikasyondur.
+- Endpoint’ler, request/response’lar, status code’lar bu standartla tarif edilir.
+- Teknolojiden bağımsızdır.
+
+---
+
+### Swagger Nedir?
+
+- OpenAPI spesifikasyonunu:
+  - **Görselleştiren**
+  - **Dokümante eden**
+  - **Test etmeyi sağlayan**
+  araçlar bütünüdür.
+
+---
+
+#### Aralarındaki İlişki
+
+- **OpenAPI = Standart**
+- **Swagger = OpenAPI’yi kullanan araçlar**
+
+---
+
+#### Spring Boot 3+ İçin Swagger / OpenAPI
+
+- Spring Boot 3 ve üzeri için önerilen kütüphane:
+  - **springdoc-openapi**
+
+---
+
+#### Swagger için Maven Bağımlılığı
+
+springdoc-openapi
+
+```xml
+<dependency>
+    <groupId>org.springdoc</groupId>
+    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+    <version>2.x.x</version>
+</dependency>
+```
+
+Swagger UI'a erişim: http://localhost:8080/swagger-ui.html
+
+---
+
+### Content Negotiation Nedir?
+
+- Client ile server arasında **hangi formatta (JSON / XML vb.) veri alışverişi yapılacağını** belirleme mekanizmasıdır.
+- Aynı endpoint’ten **farklı formatlarda response** dönebilmek için kullanılır.
+
+
+- Niçin Yapılır?
+	- Farklı client’ları desteklemek için (web, mobil, legacy sistemler)
+	- API’yi daha **esnek** hale getirmek için
+
+- Client XML İstediğinde Ne Yapar?
+	- HTTP Header’a **Accept** ekler:
+	```http
+	Accept: application/xml
+	```
+
+- Spring Boot’ta XML Desteği Nasıl Sağlanır?
+	- Varsayılan olarak JSON vardır.
+	- XML için aşağıdaki bağımlılık eklenir: `jackson-dataformat-xml`
+	```xml
+	<dependency>
+	    <groupId>com.fasterxml.jackson.dataformat</groupId>
+	    <artifactId>jackson-dataformat-xml</artifactId>
+	</dependency>
+	```
+
+---
+
+### Internationalization (i18n) Nasıl Yapılır?
+
+1- Mesaj Dosyaları
+
+- Her dil için ayrı `messages` dosyası oluşturulur:
+
+```text
+messages.properties
+messages_tr.properties
+messages_en.properties
+```
+
+Dosyaların içeriği:
+```properties
+# messages_tr.properties
+greeting=Merhaba {0}
+```
+
+```properties
+# messages_en.properties
+greeting=Hello {0}
+```
+
+2- Spring Boot otomatik olarak MessageSource sağlar ya da MessageSource için configuration class'ı yazılabilir
+
+3- Controller örneği:
+
+```java
+@GetMapping("/hello")
+public String hello() {
+    return messageSource.getMessage(
+        "greeting",
+        new Object[]{"Ali"},
+        LocaleContextHolder.getLocale()
+    );
+}
+```
+
+4- Client Tarafı: 
+
+Dil tercihini header'da ifade eder
+
+```http
+Accept-Language: tr
+```
+
+---
+
+### API Versioning
+
+#### URI Versioning
+
+**V1**
+GET http://localhost:8080/api/v1/person
+```java
+```java
+@GetMapping("/api/v1/person")
+```
+
+**V2**
+GET http://localhost:8080/api/v2/person
+```java
+@GetMapping("/api/v2/person")
+```
+
+#### Request Param Versioning
+
+**V1**
+GET http://localhost:8080/api/person?version=1
+```java
+@GetMapping(path = "/api/person", params = "version=1")
+```
+
+**V2**
+GET http://localhost:8080/api/person?version=2
+```java
+@GetMapping(path = "/api/person", params = "version=2")
+```
+
+#### Header Versioning
+
+**V1**
+GET http://localhost:8080/api/person
+X-API-VERSION: 1
+```java
+@GetMapping(path = "/api/person", headers = "X-API-VERSION=1")
+```
+
+**V2**
+GET http://localhost:8080/api/person
+X-API-VERSION: 2
+```java
+@GetMapping(path = "/api/person", headers = "X-API-VERSION=2")
+```
+
+#### Content Negotiation Versioning
+
+**V1**
+GET http://localhost:8080/api/person
+Accept: application/vnd.company.app-v1+json
+```java
+@GetMapping(
+    path = "/api/person/accept",
+    produces = "application/vnd.company.app-v1+json"
+)
+```
+
+**V2**
+GET http://localhost:8080/api/person/accept
+Accept: application/vnd.company.app-v2+json
+```java
+@GetMapping(
+    path = "/api/person/accept",
+    produces = "application/vnd.company.app-v2+json"
+)
+```
+
+---
+
+### HATEOAS Nedir?
+
+- **HATEOAS (Hypermedia As The Engine Of Application State)**  
+- REST’in 3. olgunluk seviyesidir.
+- Client, bir resource’tan **bir sonraki yapılabilecek işlemleri link’ler üzerinden öğrenir**.
+- Endpoint’ler client tarafında hard-code edilmez.
+
+---
+
+### HAL Nedir?
+
+- **HAL (Hypertext Application Language)**  
+- HATEOAS için kullanılan **standart bir JSON formatıdır**.
+- `_links` ve `_embedded` alanlarını tanımlar.
+
+---
+
+### HAL Neyi Kolaylaştırır?
+
+- Link yapısının **standartlaşmasını**
+- Client’ın API’yi **keşfedebilir (discoverable)** kullanmasını
+- API değişikliklerinin client’ı **daha az kırmasını**
+
+---
+
+### Kısa Örnek (HAL)
+
+```json
+{
+  "id": 1,
+  "name": "Ali",
+  "_links": {
+    "self": { "href": "/users/1" },
+    "all-users": { "href": "/users" }
+  }
+}
+```
+
+- Özet
+	- HATEOAS → Link tabanlı REST
+	- HAL → HATEOAS için JSON standardı
+	- HAL → Keşfedilebilir ve esnek API
+
+
+---
+
+### Spring’te HATEOAS & HAL Kullanımı
+
+Gerekli Bağımlılık
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-hateoas</artifactId>
+</dependency>
+```
+
+Controller Örneği (HAL Response):
+
+```java
+@RestController
+public class UserController {
+
+    @GetMapping("/users/{id}")
+    public EntityModel<User> getUser(@PathVariable Long id) {
+
+        User user = new User(id, "Ali");
+
+        EntityModel<User> model = EntityModel.of(user);
+        model.add(linkTo(methodOn(UserController.class)
+                .getUser(id)).withSelfRel());
+        model.add(linkTo(methodOn(UserController.class)
+                .getAllUsers()).withRel("all-users"));
+
+        return model;
+    }
+
+    @GetMapping("/users")
+    public List<User> getAllUsers() {
+        return List.of(new User(1L, "Ali"));
+    }
+}
+```
+
+Dönen HAL Formatı:
+
+/users/1 'e istek atılınca:
+
+```json
+{
+  "id": 1,
+  "name": "Ali",
+  "_links": {
+    "self": { "href": "/users/1" },
+    "all-users": { "href": "/users" }
+  }
+}
+```
+
+---
+
+### Jackson JSON Annotasyonları Ne İşe Yarar?
+
+---
+
+#### @JsonProperty
+
+- Java alan adını **JSON’daki isimle eşleştirir**.
+
+```java
+public class User {
+    @JsonProperty("user_name")
+    private String name;
+}
+```
+
+json çıktısı:
+```json
+{ "user_name": "Ali" }
+```
+
+#### @JsonIgnore
+
+- Alanı JSON response’tan tamamen çıkarır.
+
+```java
+public class User {
+    private String name;
+
+    @JsonIgnore
+    private String password;
+}
+```
+
+#### @JsonIgnoreProperties
+
+- Birden fazla alanı toplu şekilde yok sayar.
+
+```java
+@JsonIgnoreProperties({"password", "ssn"})
+public class User {
+    private String name;
+    private String password;
+    private String ssn;
+}
+```
+
+#### @JsonFilter
+
+- Dinamik filtreleme yapar (runtime’da karar verilir).
+
+```java
+@JsonFilter("UserFilter")
+public class User {
+    private String name;
+    private String password;
+}
+```
+
+```java
+@GetMapping("/users")
+public MappingJacksonValue getUser() {
+
+    User user = new User("Ali", "1234");
+
+    FilterProvider filters = new SimpleFilterProvider()
+        .addFilter("UserFilter",
+            SimpleBeanPropertyFilter.filterOutAllExcept("name"));
+
+    MappingJacksonValue mapping = new MappingJacksonValue(user);
+    mapping.setFilters(filters);
+
+    return mapping;
+}
+```
+
+---
+
+### JPA İlişkiler İçeren Basit Senaryo
+
+
+#### One-to-One  
+**User ↔ UserProfile**
+
+```java
+@Entity
+public class User {
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private UserProfile profile;
+}
+
+@Entity
+public class UserProfile {
+
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+}
+```
+
+#### One-to-Many / Many-to-One
+
+**Category ↔ Product**
+
+```java
+@Entity
+public class Category {
+
+    @OneToMany(mappedBy = "category")
+    private List<Product> products;
+}
+
+@Entity
+public class Product {
+
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private Category category;
+}
+```
+
+#### Many-to-Many
+
+**Student ↔ Course**
+
+```java
+@Entity
+public class Student {
+
+    @ManyToMany
+    @JoinTable(
+        name = "student_course",
+        joinColumns = @JoinColumn(name = "student_id"),
+        inverseJoinColumns = @JoinColumn(name = "course_id")
+    )
+    private List<Course> courses;
+}
+
+@Entity
+public class Course {
+
+    @ManyToMany(mappedBy = "courses")
+    private List<Student> students;
+}
+```
+
+---
