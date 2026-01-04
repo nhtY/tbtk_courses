@@ -3284,3 +3284,45 @@ public class Course {
 
 ## SB Bölüm 15 - Aspect Oriented Programming (AOP)
 
+### AOP Nedir?
+
+Uygulamalarımızı genelde katmanlar halinde tasarlarız ve her bir katmanın kendi sorumluluğu vardır.
+
+- Web katmanı: view logic veya REST API için JSON dönüşümleri.
+- Business (İş) katmanı: İş kuralları.
+- Data (Veri) katmanı: Veriye erişim, veriyi depolama işleri.
+
+Ancak bazı özellikler/aspects vardır ki bunlar uygulamamızın her katmanı için ortaktır.
+Bu ortak kaygılara `Cross Cutting Concerns` denir. Örnek olarak şunlar verilebilir:
+- Security
+- Logging
+- Performance
+
+<img src="images/web_app_layers.svg" alt="Description" style="height:300px;width:auto;">
+
+Uygulamamızın farklı katmanları için ortak olabilecek bu özellikleri her bir katman için baştan yazmak yerine
+bir defa yazıp farklı yerlerde kullanabilmek daha verimli olacaktır.
+
+İşte bunu yapmak için AOP kullanılır.
+
+### AOP Nasıl kullanılır?
+
+1- Ortak özelliği `aspect` olarak geliştir.
+
+2- Bu aspect'in nerede devreye gireceğini `point cut` olarak tanımla.
+
+### AOP için dependency
+
+2 Popüler framework vardır:
+
+- Spring AOP:
+  - popüler ama tam bir çözüm değil.
+  - sadece Spring bean'ları ile çalışır.
+  - Örnek: Spring Bean'larına yapılan metot çağrımlarını yakalar/intercept eder.
+- AspectJ:
+  - nadir kullanılan ama tam bir çözüm.
+  - Örnek: herhangi bir Java class'ının herhangi bir metotuna yapılan çağrıyı yakalar/intercept eder.
+  - Örnek: bir class'ın field'ındaki değer değişikliklerini yakalar/intercept eder.
+
+Biz spring AOP ile devam edeceğiz.
+
