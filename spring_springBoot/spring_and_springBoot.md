@@ -3325,4 +3325,208 @@ bir defa yazıp farklı yerlerde kullanabilmek daha verimli olacaktır.
   - Örnek: bir class'ın field'ındaki değer değişikliklerini yakalar/intercept eder.
 
 Biz spring AOP ile devam edeceğiz.
+Gradle kullanılan bir projede spring aop şöyle eklenebilir:
+
+```gradle
+dependencies {
+    // ....
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    //....
+}
+```
+
+### Spring AOP: Temel Kavramlar ve Örnekler
+
+Spring AOP (Aspect-Oriented Programming), uygulamanızın ana mantığını (business logic) bozmadan, loglama veya güvenlik gibi "kesişen ilgi alanlarını" (cross-cutting concerns) yönetmemizi sağlar.
+
+#### 1. Temel Kavramlar
+
+- @Pointcut: Hangi metotların takip edileceğini belirleyen bir "filtre"dir. "Şu paketteki şu metotlar çalışınca devreye gir" demenizi sağlar.
+
+- JoinPoint: Programın akışında Aspect'in bağlandığı o spesifik âna (metot çağrısı gibi) denir. Kodun içinde o anki metot adı veya parametreleri gibi bilgilere erişmenizi sağlar.
+
+- Advice: tanımlanan aspect'in ne zaman devreye gireceğini belirtir.
+
+#### 2. Advice Annotasyonları
+
+| Annotasyon | Görevi |
+|------------|--------|
+| @Before | Hedef metot çalışmadan hemen önce devreye girer.|
+| @Around | En güçlüsüdür. Metodun hem öncesinde hem sonrasında çalışır. Metodun çalışıp çalışmayacağına bile karar verebilir. |
+| @After | Metot başarılı olsun ya da hata versin, her durumda en son çalışır (finally bloğu gibi). |
+| @AfterReturning | Metot başarıyla sonuçlanıp bir değer döndürdüğünde çalışır. |
+| @AfterThrowing | Metot bir exception (hata) fırlattığında çalışır. |
+-------------------------------------------------------
+
+
+#### 3. Hepsi Bir Arada: Örnek Kod
+
+```java
+@Aspect
+@Component
+public class LoggingAspect {
+
+    // 1. Pointcut Tanımı: UserService içindeki tüm metotları hedef alır
+    @Pointcut("execution(* com.example.service.UserService.*(..))")
+    public void userServiceMethods() {}
+
+    // 2. Before: Metot girmeden önce
+    @Before("userServiceMethods()")
+    public void logBefore(JoinPoint joinPoint) {
+        System.out.println("Başlıyor: " + joinPoint.getSignature().getName());
+    }
+
+    // 3. AfterReturning: Başarıyla biterse (sonucu yakalayabilir)
+    @AfterReturning(pointcut = "userServiceMethods()", returning = "result")
+    public void logAfterSuccess(Object result) {
+        System.out.println("Başarıyla bitti, dönen değer: " + result);
+    }
+
+    // 4. AfterThrowing: Hata çıkarsa
+    @AfterThrowing(pointcut = "userServiceMethods()", throwing = "error")
+    public void logAfterError(Throwable error) {
+        System.out.println("Hata oluştu: " + error.getMessage());
+    }
+
+    // 5. After: Her durumda en son
+    @After("userServiceMethods()")
+    public void logFinally() {
+        System.out.println("İşlem tamamlandı (After).");
+    }
+
+    // 6. Around: Süreci tamamen kontrol eder
+    @Around("userServiceMethods()")
+    public Object logAround(ProceedingJoinPoint joinPoint) throws Throwable {
+        System.out.println("Around - Öncesi");
+        Object result = joinPoint.proceed(); // Asıl metodu çalıştıran kritik komut!
+        System.out.println("Around - Sonrası");
+        return result;
+    }
+}
+```
+> Küçük bir not: @Around kullanırken metodu manuel olarak ilerletmek için ProceedingJoinPoint kullanılır. Diğerlerinde sadece bilgi amaçlı JoinPoint yeterlidir.
+
+#### Pointcut Tanımlama Yöntemleri
+
+Pointcut tanımları söz konusu olduğunda iki yaklaşım vardır: Ya doğrudan advice içine gömersin (tek seferlik) ya da ayrı bir metot olarak tanımlayıp her yerden çağırırsın (reusable).
+
+
+- **A. Doğrudan Advice İçinde (Inline):** Sadece o advice'a özgüdür, başka yerde kullanılamaz.
+```java
+@Before("execution(* com.demo.service.*.*(..))")
+public void doSomething() { 
+    // ... 
+}
+```
+
+- **B. Tekrar Kullanılabilir (Named Pointcut):** Bir metot üzerine tanımlanır ve ismiyle diğer advice'lar tarafından çağrılır. Bu yaklaşım "Clean Code" için esastır.
+```java
+// 1. Pointcut Tanımı: UserService içindeki tüm metotları hedef alır
+@Pointcut("execution(* com.example.service.UserService.*(..))")
+public void userServiceMethods() {}
+```
+
+#### Pointcut'ları merkezi olarak tanımlamak
+
+Projelerde pointcut'ları merkezi bir yerde toplamak yönetimi kolaylaştırır. Bunun için içi boş metotlardan oluşan bir "Pointcut Library" sınıfı oluşturulur.
+
+```java
+@Aspect
+@Component // Spring'in bu sınıfı tanıması için şart
+public class CommonPointcuts {
+
+    // Tüm Service katmanını hedefler
+    @Pointcut("within(com.demo.service..*)")
+    public void serviceLayer() {}
+
+    // Sadece "delete" ile başlayan metotları hedefler
+    @Pointcut("execution(* delete*(..))")
+    public void deleteOperations() {}
+}
+```
+
+Bu merkezi pointcut'ları başka bir Aspect içinde kullanımı:
+
+```java
+@Aspect
+@Component
+public class SecurityAspect {
+
+    // Başka sınıftaki pointcut'ı tam adıyla (package + class + method) çağırıyoruz
+    @Before("com.demo.aspect.CommonPointcuts.deleteOperations()")
+    public void checkPermission() {
+        System.out.println("Güvenlik kontrolü yapılıyor...");
+    }
+}
+```
+#### Belirli Bir Annotasyonla İşaretli Class ve Metotlar için Aspect
+
+Özel bir annotasyon oluşturup bu annotasyonun olduğu yerlerde Aspect çalıştırmak, AOP'nin en "profesyonel" kullanım şeklidir. Bu sayede kodun içine execution(* ...) gibi uzun paket yolları yazmak yerine, sadece bir annotasyonla özelliği aktif edersiniz.
+
+**1. Özel Annotasyon (Custom Annotation) Oluşturma**
+
+Önce takip etmek istediğimiz metotları işaretlemek için bir interface tanımlıyoruz:
+```java
+@Target(ElementType.METHOD) // Metot seviyesinde kullanılacak
+@Retention(RetentionPolicy.RUNTIME) // Çalışma anında okunacak
+public @interface TrackTime {
+}
+```
+
+**2. Annotasyonu Hedef Alan Pointcut**
+
+Pointcut ifadesinde execution yerine @annotation kullanarak bu etiketi taşıyan metotları yakalıyoruz:
+```java
+@Pointcut("@annotation(com.demo.annotation.TrackTime)")
+public void trackTimePointcut() {}
+```
+
+**3. Performans Monitoring Örneği (Full Aspect)**
+
+İşte bu annotasyonu kullanan, metotların ne kadar sürede çalıştığını hesaplayan aspect örneği:
+```java
+@Aspect
+@Component
+public class PerformanceAspect {
+
+    // Sadece @TrackTime ile işaretli metotları izler
+    @Around("@annotation(com.demo.annotation.TrackTime)")
+    public Object monitorPerformance(ProceedingJoinPoint joinPoint) throws Throwable {
+        long startTime = System.currentTimeMillis();
+
+        // Asıl metot burada çalıştırılır
+        Object result = joinPoint.proceed(); 
+
+        long endTime = System.currentTimeMillis();
+        long duration = endTime - startTime;
+
+        System.out.println(
+            joinPoint.getSignature().toShortString() + 
+            " metodu " + duration + " ms sürdü."
+        );
+
+        return result;
+    }
+}
+```
+
+**4. Kullanım**
+
+Artık herhangi bir serviste tek yapman gereken `@TrackTime` yazmak:
+```java
+@Service
+public class ReportService {
+
+    @TrackTime // Aspect burayı otomatik yakalar!
+    public void generateComplexReport() {
+        // Rapor oluşturma işlemleri...
+    }
+}
+```
+
+- Sınıf Seviyesinde Takip: Eğer sınıfın üzerindeki bir annotasyona bakmak istersen pointcut içinde @within(com.demo.MyAnnotation) kullanılır.
+
+- Metot Seviyesinde Takip: @annotation(com.demo.MyAnnotation) kullanılır.
+
+- Avantajı: Kod değişse veya paket adı değişse bile Aspect bozulmaz, çünkü sadece annotasyona odaklanır.
 
