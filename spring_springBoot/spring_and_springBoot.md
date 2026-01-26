@@ -3530,3 +3530,328 @@ public class ReportService {
 
 - Avantajı: Kod değişse veya paket adı değişse bile Aspect bozulmaz, çünkü sadece annotasyona odaklanır.
 
+---------------
+
+## SB- Bölüm 16 - Gradle
+
+Ant, Maven Gradle build ve dependency yönetimi araçları olarak java dünyasında kullanılır. Bu bölümde gradle'a değinilecektir.
+
+### Yapılandırma Araçlarının Tarihsel Gelişimi
+
+**1. Apache Ant**
+
+Yaklaşım: Imperative (Emredici). "Ne yapılacağını ve nasıl yapılacağını adım adım söyle."
+
+Dil: XML.
+
+Artıları: Tam esneklik; herhangi bir yapı kalıbına zorlamaz.
+
+Eksileri: Yerleşik bağımlılık yönetimi yoktur. Proje büyüdükçe XML dosyaları yönetilemez hale gelir. Standart bir proje yapısı sunmaz.
+
+**2. Apache Maven**
+Yaklaşım: Declarative (Bildirimsel). "Yapılandırma yerine standartlar" (Convention over Configuration).
+
+Dil: XML (pom.xml).
+
+Artıları: Güçlü ve otomatik bağımlılık yönetimi. Standart yaşam döngüsü (Lifecycle) ve klasör yapısı.
+
+Eksileri: Çok katı; standart dışı işlemlerde plugin yazma zorunluluğu. Büyük projelerde XML hantallığı.
+
+**3. Gradle**
+Yaklaşım: Ant'ın esnekliği ile Maven'ın bağımlılık yönetimi ve standartlarının birleşimidir.
+
+Dil: *Groovy veya Kotlin tabanlı DSL (Domain Specific Language).*
+
+Artıları: Performans: "Incremental Build" ve "Build Cache" sayesinde sadece değişen kısımları derler; Maven'dan 100 kata kadar hızlıdır.
+
+Esneklik: XML yerine kod yazılabilir (Scripting), özelleştirme çok kolaydır.
+
+Gelişmiş Bağımlılık Yönetimi: Karmaşık bağımlılık çakışmalarını çok daha iyi çözer.
+
+### Gradle'ın Sağladığı Avantajlar ve Temel Özellikler
+
+Gradle, Maven'ın standartlarını Ant'ın esnekliğiyle birleştiren, performans odaklı bir yapılandırma aracıdır.
+
+**1. Performans ve Hız Mekanizmaları**
+
+Gradle'ın Maven'a göre en büyük üstünlüğü hızdır. Bunu üç temel özellikle sağlar:
+
+Incremental Build (Artımlı Derleme): Gradle, taskların girdi (input) ve çıktılarını (output) izler. Eğer bir dosya değişmediyse, o taskı tekrar çalıştırmaz (UP-TO-DATE olarak işaretler).
+
+Build Cache: Daha önce yapılmış derlemelerin sonuçlarını saklar. Aynı kod başka bir branch'te veya ekip arkadaşının bilgisayarında derlendiyse, Gradle sonucu buluttan veya yerel diskten indirerek derleme süresini sıfıra indirir.
+
+Daemon Süreci: Gradle, arka planda çalışan ve "sıcak" kalan bir process (Daemon) kullanır. Bu sayede her komut verildiğinde JVM'in yeniden başlatılma maliyetini ortadan kaldırır.
+
+**2. Maven Uyumluluğu ve Proje Yapısı**
+
+Aynı Klasör Yapısı: Gradle, varsayılan olarak Maven'ın standart klasör yapısını (src/main/java, src/test/java) kullanır.
+
+Bağımlılık Uyumluluğu: Maven repository'lerini (Maven Central gibi) doğrudan kullanabilir. Mevcut bir Maven projesini gradle init komutuyla kolayca Gradle'a dönüştürebilir.
+
+**3. Kullanım Kolaylığı ve Esneklik**
+
+Scripting Özgürlüğü: XML gibi statik bir yapı yerine Groovy veya Kotlin ile kod yazılabildiği için karmaşık mantıklar (koşullu derlemeler, özel dosya kopyalama işlemleri) kolayca kurgulanır.
+
+Wrapper Kullanımı: gradlew (wrapper) sayesinde, bilgisayarında Gradle yüklü olmayan biri bile projeyi tek komutla derleyebilir. Wrapper, gerekli Gradle sürümünü otomatik indirir.
+
+### Gradle ve Groovy İlişkisi
+
+Gradle bir programlama dili değildir; Groovy veya Kotlin dillerini kullanan, açık kaynaklı bir otomasyon ve yapılandırma (build) aracıdır.
+
+**Örnek: Groovy ile Gradle Konfigürasyonu**
+
+Aşağıdaki kod parçası bir programlama dili (Groovy) kullanılarak Gradle motoruna verilen bir talimattır:
+
+```groovy
+// build.gradle (Groovy DSL)
+plugins {
+    id 'java'
+}
+
+version = '1.0.0'
+
+// groovy ile yazıldığından mantıksal sorgular yapılabilir
+if (project.hasProperty('release')) {
+    println "Release sürümü hazırlanıyor..."
+}
+
+dependencies {
+    implementation 'org.slf4j:slf4j-api:1.7.30'
+}
+```
+
+### Gradle Proje Yapısı ve Temel Dosyalar
+
+Bir Gradle projesinde her dosyanın derleme sürecinde spesifik bir görevi vardır. En kritik dosyalar şunlardır:
+
+**1. settings.gradle (veya .kts)**
+
+Proje yapısını tanımlayan ilk çalışan dosyadır.
+
+Görevi: Hangi modüllerin projeye dahil edileceğini belirler.
+
+İşlevi: Çok modüllü (multi-module) projelerde hiyerarşiyi kurar ve proje ismini tanımlar.
+
+Örnek: include(':app', ':library')
+
+**2. build.gradle (veya .kts)**
+
+Her modülün kendi içinde bulunan ana yapılandırma dosyasıdır.
+
+Görevi: "Bu proje nasıl derlenecek?" sorusunun cevabını verir.
+
+İşlevi: Kullanılacak pluginleri, dış kütüphaneleri (dependencies), test kütüphanelerini ve derleme sürümlerini (Java/Android versiyonu vb.) tanımlar.
+
+**Teknik Özet: Dosya Akışı**
+
+*settings.gradle:* Proje ağacını tara.
+
+*build.gradle:* Bağımlılıkları ve pluginleri yükle.
+
+*gradle.properties:* Yapılandırma sabitlerini oku.
+
+*Tasklar:* Derleme işlemini başlat.
+
+### Maven (pom.xml) vs. Gradle (build.gradle)
+
+POM.XML ile
+
+```xml
+<project>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.example</groupId>
+    <artifactId>my-app</artifactId>
+    <version>1.0.0</version>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.30</version>
+        </dependency>
+    </dependencies>
+</project>
+```
+
+BUILD.GRADLE ile
+
+```groovy
+group 'com.example'
+version '1.0.0'
+
+dependencies {
+    implementation 'org.slf4j:slf4j-api:1.7.30'
+}
+```
+
+### Gradle Bağımlılık Yönetimi
+
+Gradle'da bağımlılıklar "scope" (kapsam) mantığına göre yönetilir. Bu, bir kütüphanenin projenin hangi aşamasında (derleme, çalışma, test) kullanılacağını belirler.
+
+**1. Spring Web Dependency Örneği**
+
+Spring Boot projesinde web yeteneklerini eklemek için kullanılan temel yapı:
+
+```groovy
+dependencies {
+    // Uygulamanın ana kodu için gerekli
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // Sadece test kodları için gerekli
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+```
+
+**2. implementation vs. testImplementation**
+
+implementation: Kütüphaneyi ana kaynak koduna (src/main) dahil eder. Hem derleme (compile) hem de çalışma (runtime) zamanında erişilebilirdir.
+
+testImplementation: Kütüphaneyi sadece test kaynak koduna (src/test) dahil eder. Testleri yazarken ve çalıştırırken kullanılır, ancak uygulamanın nihai paketine (.jar/.war) dahil edilmez.
+
+> Soru: testImplementation belirtilmezse implementation varsayılan mıdır?
+>
+> Cevap: Hayır. implementation ile eklediğin bir kütüphaneye test klasöründen de erişebilirsin (çünkü testler ana koda bağımlıdır). Ancak sadece testte kullanacağın bir kütüphaneyi (örneğin JUnit) implementation ile eklersen, bu kütüphane gereksiz yere production paketine dahil edilir. Bu yüzden test araçları her zaman testImplementation ile ayrılmalıdır.
+
+**3. testRuntimeOnly Nedir?**
+
+Bu kapsam, kütüphanenin testleri yazarken (compile time) değil, sadece testler çalışırken (runtime) gerekli olduğunu belirtir.
+
+Örnek: Test sonuçlarını raporlayan bir kütüphane veya test sırasında kullanılan bir veritabanı sürücüsü (H2 Database). Kodun içinde bu kütüphaneye ait bir sınıfı import etmezsin, ama arka planda çalışması gerekir.
+
+**4. JUnit ve junit-platform-launcher**
+
+JUnit 5 (Jupiter) mimarisinde, testlerin Gradle veya IDE tarafından keşfedilip çalıştırılması için bir "motor" gerekir.
+
+Şart mı? Modern Gradle sürümlerinde (Örn: Gradle 8+) ve güncel IDE'lerde, testleri çalıştırmak için junit-platform-launcher kütüphanesini testRuntimeOnly olarak eklemek genellikle şarttır.
+
+Bu kütüphane olmazsa, Gradle testleri "no tests found" diyerek atlayabilir veya başlatamaz.
+
+Örnek JUnit5 yapılandırması:
+```groovy
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform() // JUnit 5 kullanıldığını Gradle'a bildirir
+}
+```
+
+### Gradle Plugin Sistemi ve Örnek Yapılandırma
+
+Gradle'ın çekirdeği (core) oldukça hafiftir; tüm yeteneklerini pluginler aracılığıyla kazanır. Pluginler, projeye yeni tasklar, konfigürasyonlar ve standartlar ekleyen paketlerdir.
+
+**1. Yaygın Kullanılan Pluginler**
+
+*Java Plugin:* Projeye Java yetenekleri kazandırır. compileJava, test, jar ve javadoc gibi temel taskları ekler. Ayrıca Maven standart layout'unu (src/main/java) varsayılan olarak tanımlar.
+
+*Spring Boot Plugin (org.springframework.boot):* Spring Boot uygulamalarını çalıştırmak ve paketlemek için kullanılır. bootRun (uygulamayı başlatır), bootJar (çalıştırılabilir fat-jar oluşturur) ve bootBuildImage (Docker imajı oluşturur) tasklarını ekler.
+
+*Dependency Management Plugin (io.spring.dependency-management):* Maven'ın "BOM" (Bill of Materials) özelliğini Gradle'a taşır. Bağımlılıkların versiyonlarını tek tek belirtmek yerine, Spring Boot sürümüyle uyumlu versiyonları otomatik yönetmenizi sağlar.
+
+**2. Örnek: build.gradle (Groovy DSL)**
+
+Aşağıda pluginlerin, versiyonların ve bağımlılıkların yer aldığı standart bir Spring Boot yapılandırması bulunmaktadır:
+
+```groovy
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.2'
+    id 'io.spring.dependency-management' version '1.1.4'
+}
+
+group = 'com.example'
+version = '1.0.0-SNAPSHOT'
+sourceCompatibility = '17' // Java versiyonu
+
+repositories {
+    mavenCentral() // Kütüphanelerin indirileceği depo
+}
+
+dependencies {
+    // Spring Boot Starter Web (Versiyon belirtilmez, Dependency Management Plugin halleder)
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    
+    // Harici bir kütüphane - Versiyon manuel belirtilmiş
+    implementation 'org.apache.commons:commons-lang3:3.14.0'
+
+    // Test bağımlılıkları
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+```
+**Özet: Neden Plugin Kullanıyoruz?**
+
+Gradle özünde boş bir kutudur. "Ben bir Java projesiyim" demek için java pluginini, "Ben bir Spring Boot projesiyim ve Docker imajı istiyorum" demek için ilgili Spring pluginlerini takarsınız. Bu modüler yapı build scriptlerinizin temiz ve amaca yönelik kalmasını sağlar.
+
+### Gradle Task Yapısı ve Custom Task Tanımlama
+
+Gradle'ın tüm çalışma mantığı Task (görev) birimleri üzerine kuruludur. Derleme, test etme, dosya kopyalama veya JAR oluşturma gibi her işlem birer Task'tır.
+
+**1. Task Graph (Görev Çizelgesi)**
+
+Gradle bir komut aldığında, çalıştırılması gereken tüm Task'ları ve bunların birbirine olan bağımlılıklarını analiz eder.
+
+DAG (Directed Acyclic Graph): Gradle, Task'lar arasında bir "yol haritası" çıkarır. Örneğin, test Task'ı çalışmadan önce compileJava Task'ının bitmiş olması gerekir.
+
+Verimlilik: Gradle bu çizgeyi kullanarak hangi Task'ların paralel çalışabileceğine veya hangi Task'ların değişmediği için atlanabileceğine (UP-TO-DATE) karar verir.
+
+**2. Custom Task (Özel Görev) Tanımlama**
+
+Kendi iş mantığınızı (örneğin derleme sonrası bir dosyayı yedeklemek veya versiyon bilgisini yazdırmak) yürütecek Task'lar oluşturabilirsiniz.
+
+Örnek: build.gradle (Groovy DSL) içinde basit bir Task
+
+```groovy
+tasks.register('projeBilgisi') {
+    group = 'custom' // IntelliJ'de hangi grup altında görüneceğini belirler
+    description = 'Proje versiyonunu ve zamanını yazdırır.'
+
+    doLast {
+        println "--- Proje Bilgileri ---"
+        println "İsim: ${project.name}"
+        println "Versiyon: ${project.version}"
+        println "Zaman: ${new Date()}"
+    }
+}
+```
+
+**3. IntelliJ IDEA'da Task Yönetimi**
+
+IntelliJ, Gradle Task'larını görselleştirmek ve çalıştırmak için güçlü bir arayüz sunar:
+
+* Gradle Tool Window: Sağ üst köşedeki "Gradle" ikonuna tıklayın.
+
+* Task Listesi: Proje adınızın altındaki Tasks klasörünü açın. build, help, other gibi gruplar göreceksiniz.
+
+* Yukarıdaki kodda tanımladığımız projeBilgisi Task'ı, custom grubu altında görünecektir.
+
+* Çalıştırma: Bir Task'a çift tıklayarak çalıştırabilirsiniz.
+
+* Hızlı Çalıştırma (Ctrl/Cmd twice): Run Anything penceresini açıp gradle projeBilgisi yazarak da tetikleyebilirsiniz.
+
+**4. Task Bağımlılığı Oluşturma**
+
+Bir Task'ın otomatik olarak başka bir Task'tan sonra çalışmasını sağlayabilirsiniz:
+
+```groovy
+tasks.named('build') {
+    dependsOn 'projeBilgisi' // build komutu verildiğinde önce projeBilgisi çalışır
+}
+```
+
+**Özet Notlar**
+* **Default Tasklar:** Pluginler (Java, Spring vb.) projeye hazır Task'lar ekler.
+
+* **Register vs Create:** Modern Gradle'da Task'lar register ile tanımlanır (performans için sadece ihtiyaç duyulduğunda yapılandırılır).
+
+* **doLast:** Task'ın asıl iş mantığı bu blok içinde yer alır. Eğer bu blok dışına kod yazarsanız, bu kod Configuration aşamasında (iş başlamadan) çalışır.
+
+----
+
