@@ -3855,3 +3855,269 @@ tasks.named('build') {
 
 ----
 
+## SB Bölüm 17 - Docker Temelleri
+
+Bilgisayarımızda Docker'ı kullanmak için (grafik arayüzüyle birlikte) iki popüler seçenek var Docker Desktop ve Podman Desktop.
+
+### Docker Desktop vs. Podman Desktop
+
+**1. Mimari Farklar**
+
+*Daemon vs. Daemonless:* Docker: Arka planda root yetkisiyle çalışan bir servis (daemon) gerektirir. Bu servis çökerse tüm konteynırlar durur.
+
+*Podman:* Daemon gerektirmez. Her konteynır, onu başlatan kullanıcının bir alt süreci (child process) olarak çalışır.
+
+*Root Yetkisi (Rootless):* Podman, güvenlik gereği varsayılan olarak root yetkisi olmadan çalışacak şekilde tasarlanmıştır. Docker Desktop ise izolasyon için sanal makine kullanır.
+
+**2. Yönetim ve Kullanım**
+
+*GUI (Arayüz):* Her iki araç da konteynırları, imajları ve volumeları yönetmek için grafik arayüz sunar.
+
+*Komut Uyumluluğu:* Podman, Docker CLI ile %99 uyumludur.
+
+Not: alias docker=podman yapılarak tüm alışkanlıklar sürdürülebilir.
+
+*Pod Kavramı:* Podman, Kubernetes mantığına uygun olarak birden fazla konteynırı tek bir "Pod" içinde gruplayabilir. Docker'da bu işlem Docker Compose ile mantıksal olarak yapılır.
+
+**3. Lisanslama ve Maliyet**
+
+*Docker Desktop:* Kişisel kullanım ve küçük işletmeler için ücretsiz; büyük ölçekli şirketler (250+ çalışan veya $10M+ ciro) için ücretli abonelik gerektirir.
+
+*Podman Desktop:* Tamamen açık kaynak kodludur (FOSS) ve her ölçekte kullanımı ücretsizdir.
+
+**4. Teknik Düzeltme ve Kritik Not**
+
+*Networking:* Docker Desktop'ta localhost üzerinden port yönlendirmesi daha stabildir. Podman'de "Rootless" modda çalışırken bazı ağ portlarına (0-1024 arası) erişim için ek izinler gerekebilir.
+
+*Docker Compose:* Podman artık docker-compose.yml dosyalarını doğrudan desteklemektedir, ancak Docker Desktop bu konuda hala endüstri standardıdır.
+
+### Deployment Süreçleri ve Docker İhtiyacı
+
+**1. Geleneksel Deployment (Manual/Legacy)**
+
+Geleneksel yöntemde süreç sıralı ve bağımlı ilerler. Operasyon ekibi her ortam (Test, Pre-prod, Prod) için şu adımları manuel veya scriptlerle yönetir:
+
+*Altyapı:* Donanım ve İşletim Sistemi (OS) konfigürasyonu.
+
+*Runtime:* Dil motorlarının (Java, Python vb.) doğru versiyonlarının kurulumu.
+
+*Bağımlılıklar:* Kütüphaneler, çevresel değişkenler (Environment Variables) ve konfigürasyon dosyaları.
+
+*Uygulama:* Artifact'in (JAR, WAR, JS) kurulumu.
+
+**Sorun:** "Benim makinemde çalışıyordu" (It works on my machine) problemi. Ortamlar arası versiyon ve ayar farklılıkları hataya açık ve yavaştır.
+
+**2. Docker ile Modern Deployment**
+
+Docker, uygulamayı ve bağımlılıklarını bir Image (İmaj) içinde paketleyerek süreci standartlaştırır.
+
+*Geliştirici Sorumluluğu:* Uygulama kodunu, runtime'ı ve tüm bağımlılıkları içeren İmajı oluşturur.
+
+*Operasyon Sorumluluğu:* İmajı hedef ortamda (Cloud, On-premise) tek bir komutla çalıştırır.
+
+**3. Docker Neden Kolaylık Sağlar?**
+
+*Kapsülleme (Encapsulation):* İmaj; işletim sistemi katmanı, runtime (JDK, Node.js), uygulama kodu ve konfigürasyonları tek bir paket halinde sunar. Ayrıca uygulamanın üzerinde çalışacağı İşletim Sistemi imajın içine hapsedildiği için dış ortamdaki (host machine) işletim sisteminin ne olduğu (Linux, Windows, MacOS) uygulamanın çalışmasını etkilemez.
+
+*Taşınabilirlik (Portability):* Docker Runtime olan her yerde (Lokal, Server, Cloud) aynı imaj, aynı davranışla çalışır.
+
+*Hız:* Manuel kurulum adımları yerine tek komut yeterlidir: docker run -d -p 8080:8080 my-app:v1
+
+**Özet Neden Docker?**
+
+* **Standart Paketleme:** Dil ve teknoloji bağımsız (Java, Python, JS) tüm uygulamalar aynı standart "Image" formatında paketlenir.
+
+* **Çoklu Platform (Multi-Platform):** "Bir kere yaz, her yerde çalıştır." İmaj; lokal makine, on-premise veri merkezleri veya bulut sağlayıcılarda (AWS, Azure, GCP) aynı şekilde davranır.
+
+* **İzolasyon:** Her konteyner kendi dosya sistemine, değişkenlerine ve ağ katmanına sahiptir. Bir konteynırdaki çökme veya güvenlik açığı diğerlerini doğrudan etkilemez.
+
+### `run` Komutu Anatomisi
+
+Komutun arka planında dönen süreç ve parametrelerin teknik karşılıkları:
+
+`docker container run -d -p 5001:5000 myRepo/hello-world-app:0.0.1.RELEASE`
+
+**Registry Akışı:** İmaj lokalde (Local Cache) yoksa, varsayılan olarak Docker Hub'dan indirilir (Pull). Şirket içi özel (private) registry'ler de kullanılabilir.
+
+**Image vs. Container:** İmaj statik bir dosyadır (byte dizisidir). Konteynır ise bu imajın belleğe yüklenip izole bir süreç (process) olarak çalışan halidir.
+
+**Adlandırma:**
+- **myRepo/hello-world-app:** Repository (Depo) adı.
+- **0.0.1.RELEASE:** Tag (Etiket/Versiyon). Belirtilmezse varsayılan latest kabul edilir.
+
+**Network ve Çalışma Modları**
+
+- **Port Mapping (-p 5001:5000):** Docker varsayılan olarak Bridge Network kullanır. Konteynırlar dış dünyaya kapalıdır. Dışarıdan gelen isteği (5001) konteynırın içindeki porta (5000) yönlendirmek (mapping) gerekir.
+
+- **Detached Mode (-d):** Konteynırı arka planda çalıştırır. Terminali bloklamaz, böylece aynı konsol üzerinden komut yazmaya devam edilebilir.
+
+### Docker Temel Kavramları
+
+**1. Yapı Taşları (Statik Bileşenler)**
+
+**Dockerfile:** Bir imajın nasıl inşa edileceğini adım adım tanımlayan metin dosyasıdır (Reçete).
+
+**Docker Image (İmaj):** Uygulamanın, kütüphanelerin ve çalışma ortamının (runtime) dondurulmuş bir paketidir. Statiktir, değiştirilemez (Immutable).
+
+**Docker Repository:** Aynı uygulamanın farklı sürümlerini (versiyonlarını) içeren bir koleksiyondur. Sürümler birbirinden Tag (Etiket) ile ayrılır.
+
+**2. Saklama ve Dağıtım**
+
+**Docker Registry:** İmajların depolandığı ve paylaşıldığı sunucu sistemidir.
+
+**Docker Hub:** Docker'ın resmi ve dünyanın en büyük genel (public) registry servisidir.
+
+**3. Çalışma Zamanı (Dynamic Component)**
+
+**Docker Container:** Bir imajın izole bir süreç olarak çalışan halidir (Runtime Instance). İmaj bir sınıfa (Class) benzetilirse, konteynır o sınıftan türetilmiş bir nesnedir (Object).
+
+> ⚠️ Kritik Hatırlatma
+> - Bir Repository içinde birden fazla Image bulunabilir (Örn: postgres:13, postgres:14, postgres:latest).
+>
+> - Container silindiğinde içindeki veriler (eğer Volume kullanılmadıysa) kaybolur; ancak Image bu durumdan etkilenmez, tekrar çalıştırılabilir.
+
+### Dockerfile ile Image Oluşturma
+
+Spring Boot uygulamasını paketledikten sonra (JAR dosyası hazır olduğunda), bu dosyayı bir konteyner içinde çalıştırmak için kullanılan en temel yöntemdir. Dockerfile dosyası image oluşturmada kullanılan bir dizi komut içerir.
+
+```Dockerfile
+FROM openjdk:17-jdk-slim
+# Uygulama dosyasını imajın içine kopyala
+COPY target/my-app-0.0.1-SNAPSHOT.jar app.jar
+# Uygulamanın çalışacağı portu belirt (Bilgilendirme amaçlı)
+EXPOSE 8080
+# Konteyner başladığında çalışacak komut
+ENTRYPOINT ["java", "-jar", "/app.jar"]
+```
+
+Temel Komutlar:
+
+* Build: `docker build -t kullanıcı_adı/app-name:v1 .` (Sondaki noktaya dikkat, context'i yani dockerfile'ın bulunduğu dizini belirtir.)
+* Run: `docker run -d -p 8080:8080 kullanıcı_adı/app-name:v1`
+
+### Multi-Stage Build (Çok Aşamalı İnşa)
+
+Her geliştiricinin bilgisayarındaki Java veya Maven sürümü farklı olabilir. "Benim makinemde çalışıyordu" sorununu çözmek için build işlemini Docker içinde yaparız. Bu yöntemle final imajında Maven gibi build araçlarını barındırmayarak imaj boyutunu ciddi oranda düşürürüz.
+
+```Dockerfile
+# 1. Aşama: Build (İnşa)
+FROM maven:3.8.6-openjdk-17 AS build
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+# 2. Aşama: Run (Çalıştırma)
+FROM openjdk:17-jdk-slim
+WORKDIR /app
+# Sadece bir önceki aşamada üretilen JAR dosyasını alıyoruz
+COPY --from=build /app/target/*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+> Not: VOLUME /tmp genellikle Spring Boot uygulamalarında Tomcat'in çalışma dosyaları için kullanılır, opsiyoneldir ancak performans ve geçici veri yönetimi için eklenebilir.
+
+### Layer Caching (Katman Önbelleğe Alma)
+
+Docker her komutu bir katman (layer) olarak kaydeder. Bir katman değişmediyse Docker onu tekrar çalıştırmaz, cache’den getirir.
+
+**Kritik Kural:** Eğer bir katman değişirse, o katmandan sonra gelen tüm katmanlar geçersiz sayılır ve sıfırdan çalıştırılır.
+
+- Hatalı Yaklaşım (Yavaş):
+```Dockerfile
+COPY . . 
+RUN mvn clean package
+```
+Sorun: Herhangi bir Java kodunu değiştirdiğinde COPY . . katmanı bozulur. RUN aşamasında Docker, sanki yeni bir kütüphane eklemişsin gibi yüzlerce MB bağımlılığı (dependency) Maven ile her seferinde tekrar indirir.
+
+- Doğru Yaklaşım (Hızlı):
+```Dockerfile
+# 1. Sadece bağımlılık listesini kopyala
+COPY pom.xml .
+
+# 2. Bağımlılıkları indir (Bu katman cache'lenir!)
+RUN mvn dependency:go-offline
+
+# 3. Kodları şimdi kopyala ve build al
+COPY src ./src
+RUN mvn clean package
+```
+Sonuç: pom.xml değişmediği sürece, kütüphanelerin indirildiği 2. adım her zaman cache’den gelir. Sadece değişen kodların derlendiği son adım çalışır. Dakikalar süren build işlemi saniyelere düşer.
+
+> `go-offline`, bağımlılık indirme işlemini "kod derleme" işleminden ayırarak Docker cache'ine hapsetmemizi sağlar. Proje büyüdükçe build süresini 5 dakikadanlardan 30 saniyeye düşüren sihirli dokunuştur.
+
+### Spring Boot Maven Plugin (Cloud Native Buildpacks)
+
+Docker installed (Docker masaüstü açık) olduğu sürece, hiçbir Dockerfile yazmadan imaj oluşturabilirsiniz. Spring Boot, **Paketo Buildpacks** kullanarak endüstri standartlarında, güvenli ve optimize edilmiş imajlar üretir.
+
+Komut: mvn spring-boot:build-image `./mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=myRepo/app-name:v3`
+
+Avantajları:
+- Dockerfile yönetme zahmeti yoktur.
+- İmaj katmanları (OS, JRE, App Libs, App Classes) otomatik olarak en verimli şekilde ayrıştırılır.
+- Güvenlik yamaları otomatik yönetilir.
+
+### Docker compose
+
+Docker-compose, birden fazla konteynerin (örneğin; Spring Boot uygulaması + PostgreSQL + Redis) tek bir merkezden, tek bir komutla yönetilmesini sağlayan bir orkestrasyon aracıdır.
+
+Karmaşık docker run komutlarını uzun uzun yazmak yerine, her şeyi bir .yml dosyasında tanımlarsın.
+
+**Örnek: Spring Boot + PostgreSQL Yapılandırması**
+Aşağıdaki docker-compose.yml dosyası, uygulamanı ve veritabanını aynı ağa bağlayarak birlikte ayağa kaldırır:
+```yml
+version: '3.8' # Docker compose dosya versiyonu
+
+services:
+  db:
+    image: postgres:15
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: my_database
+    ports:
+      - "5432:5432"
+
+  app:
+    build: . # Bulunulan dizindeki Dockerfile'ı kullan
+    container_name: spring-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db # Önce db servisinin başlamasını sağlar
+    environment:
+      # Spring Boot'un DB'ye bağlanması için gerekli env değişkenleri
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/my_database
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+```
+
+**Temel Komutlar**
+- docker-compose up: Tüm servisleri oluşturur ve başlatır.
+- docker-compose up -d: Servisleri arka planda (detached) çalıştırır.
+- docker-compose down: Tüm servisleri durdurur ve oluşturulan konteynerleri, ağları siler.
+- docker-compose build: Sadece imajları yeniden build eder (kod değişikliği yaptığında kullanılır).
+
+**Neden Kullanmalıyız?**
+- Tek Komutla Başlatma: Veritabanını ayrı, uygulamayı ayrı başlatma zahmetinden kurtarır.
+- Network Yönetimi: Konteynerler otomatik olarak aynı sanal ağa (network) dahil olur. Uygulama içinde veritabanına localhost yerine servis adı olan db ile erişebilirsin.
+- Ortam Değişkenleri: Şifreler ve bağlantı URL'leri gibi bilgileri merkezi olarak yönetmeni sağlar.
+- Bağımlılık Sırası: depends_on ile "veritabanı hazır olmadan uygulamayı başlatma" diyerek hata alma riskini azaltırsın.
+
+> Unutma: Spring Boot tarafında application.properties içinde veritabanı host kısmına localhost değil, docker-compose dosyasındaki servis adını (db) yazmalısın.
+
+**Spring Boot Maven Plugin** ile **Docker Compose** birleştiğinde iş akışını daha da kolaylaştırmak mümkün. (spring-boot-docker-compose kütüphanesini eklediysen)
+- Sen uygulamayı IDE'den veya mvn spring-boot:run ile başlattığında, Spring Boot otomatik olarak docker-compose up komutunu arka planda çalıştırır.
+- Uygulamayı kapattığında ise docker-compose stop yapar.
+- Normalde Docker Compose içindeki veritabanına bağlanmak için application.properties içine URL, kullanıcı adı ve şifre yazman gerekir.
+- Ancak bu plugin sayesinde Spring Boot, Docker Compose dosyasını okur.
+- Veritabanının hangi portta çalıştığını ve şifresini otomatik olarak algılar.
+- Senin properties dosyasına hiçbir şey yazmana gerek kalmaz.
+
+Ayrıca
+- mvn spring-boot:build-image komutunu verdiğinde plugin, Spring Boot projeni analiz eder ve optimize edilmiş bir Docker imajı üretir.
+- Ardından sen bu imajı docker-compose.yml içinde image: my-app-name diyerek kullanabilirsin.
+
+---
+
