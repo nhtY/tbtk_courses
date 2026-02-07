@@ -4121,3 +4121,94 @@ Ayrıca
 
 ---
 
+## SB Bölüm 18 - JUnit Giriş
+
+### Test Seviyeleri Karşılaştırması
+
+| Özellik | Unit Test (Birim Test) | Integration/System Test |
+|---------|------------------------|-------------------------|
+| Kapsam | En küçük kod parçası (Metot/Sınıf). | "Birden fazla modül, DB, API bağlantıları." |
+| Hız | Çok hızlı (milisaniyeler). | Yavaş (saniyeler/dakikalar). |
+| İzolasyon | Tam izole (Dış bağımlılıklar Mock'lanır). | "Gerçek bağımlılıklar (DB, Network) kullanılır." |
+| Maliyet | Hata tespiti ve çözümü çok ucuzdur. | Hata tespiti ve çözümü daha maliyetlidir. |
+
+### Neden Unit Test Yazmalıyız?
+
+- **Regresyonu Önler:** Yeni eklenen kodun eski çalışan sistemi bozmadığını garanti eder.
+- **Dokümantasyon Sağlar:** Test kodları, bir metodun nasıl çalışması gerektiğini anlatan yaşayan bir dokümandır.
+- **Tasarımı İyileştirir:** Test edilebilir kod yazmaya çalışmak, daha modüler ve temiz bir mimari (Clean Code) oluşturmanızı sağlar.
+
+### Araçlar: JUnit ve Mockito
+
+- **JUnit:** Java için bir test "runner"dır. Testleri organize etmeni, çalıştırmanı ve sonuçları kontrol etmeni (assertion) sağlar.
+
+- **Mockito:** Test ettiğin sınıfın dış dünyayla (DB, başka servisler) bağını kesmek için kullanılan "mock"lama kütüphanesidir.
+
+> Önemli Not: İkisi de standart Java kütüphanesidir. Spring Framework ile kullanılmak zorunda değildir; herhangi bir Java projesinde (Plain Java) kullanılabilirler.
+
+### Assertion (Doğrulama) Çeşitleri
+
+Testin başarılı sayılması için beklenen ve gerçekleşen değerlerin karşılaştırılmasıdır. Bazları şunlardır:
+
+- assertEquals(expected, actual): Değerler eşit mi?
+- assertTrue(condition): Durum doğru mu?
+- assertNull(object): Nesne null mu?
+- assertArrayEquals(expectedArray, actualArray): Diziler aynı elemanlara sahip mi?
+
+### JUnit Yaşam Döngüsü ve Annotasyonlar
+
+JUnit annotasyonlarını ve assertion'larını şu örnekte görelim:
+```java
+import org.junit.jupiter.api.*; // JUnit 5 (Jupiter)
+import static org.junit.jupiter.api.Assertions.*;
+
+class MathServiceTest {
+
+    // Sınıf bazında bir kez çalışır (Örn: DB bağlantısı başlatma)
+    @BeforeAll
+    static void setupAll() {
+        System.out.println("Tüm testlerden ÖNCE bir kez çalıştı.");
+    }
+
+    // Her @Test metodundan önce çalışır (Örn: Nesne yaratma, veri sıfırlama)
+    @BeforeEach
+    void setup() {
+        System.out.println("Her testten önce çalıştı.");
+    }
+
+    @Test
+    @DisplayName("Dizi toplamını doğru hesaplamalı")
+    void testCalculateSum() {
+        int[] numbers = {1, 2, 3};
+        int result = calculateSum(numbers); // Test edilen metot
+        assertEquals(6, result, "Toplam 6 olmalıydı");
+    }
+
+    @Test
+    void testEmptyArray() {
+        assertEquals(0, calculateSum(new int[]{}), "Boş dizi 0 dönmeli");
+    }
+
+    // Her @Test metodundan sonra çalışır (Örn: Temizlik işlemleri)
+    @AfterEach
+    void tearDown() {
+        System.out.println("Her testten sonra çalıştı.");
+    }
+
+    // Sınıf bazında en son çalışır (Örn: Kaynakları kapatma)
+    @AfterAll
+    static void tearDownAll() {
+        System.out.println("Tüm testlerden SONRA bir kez çalıştı.");
+    }
+
+    // Örnek Metot
+    int calculateSum(int[] numbers) {
+        int sum = 0;
+        for (int n : numbers) sum += n;
+        return sum;
+    }
+}
+```
+
+Mockito ile kullanımlarına daha sonra bakılabilir.
+
