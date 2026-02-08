@@ -4210,5 +4210,182 @@ class MathServiceTest {
 }
 ```
 
-Mockito ile kullanımlarına daha sonra bakılabilir.
+---
+
+React'lar ilgili bölümler atlandı.
+
+---
+## SB Bölüm 24 - Mocking with Mockito
+
+### Mockito ve Birim Test (Unit Testing)
+Spring Boot projelerinde birim test yazarken, test edilen sınıfı (SUT - System Under Test) dış dünyadan izole etmek gerekir. spring-boot-starter-test bağımlılığı, Mockito'yu otomatik olarak projenize dahil eder.
+
+### Stub vs. Mock Yaklaşımı
+Uygulamalar katmanlı mimarilere sahiptir ve sınıflar birbirine bağımlıdır. Bir sınıfı test ederken bağımlı olduğu diğer sınıfları (Database, External API vb.) simüle etmemiz gerekir.
+
+**Stub (Taslak) Yaklaşımı**
+Bağımlı olunan sınıfın manuel olarak taklit edilmesidir.
+
+- Dezavantajı: Her test senaryosu için ayrı sınıflar veya karmaşık if-else blokları yazmanız gerekir. Bakımı zordur.
+```java
+// Stub örneği - Manuel oluşturma zahmetlidir
+public class DatabaseServiceStub extends DatabaseService {
+    @Override
+    public String getData() {
+        return "Stub verisi";
+    }
+}
+```
+
+**Mock Yaklaşımı**
+Mockito sayesinde sınıfın gerçek bir implementasyonunu yazmadan, çalışma zamanında (runtime) sanal bir kopyasını oluştururuz. `when(...).thenReturn(...)` kalıbı ile davranışları kolayca belirleriz.
+
+### Mockito Annotations (Pratik Kullanım)
+Bağımlılıkları constructor ile manuel geçmek yerine Mockito'nun sağladığı annotasyonları kullanmak kodu çok daha temiz tutar.
+
+- **@ExtendWith(MockitoExtension.class):** JUnit 5 ile Mockito'yu entegre eder.
+- **@Mock:** Bağımlı olunan sınıfın mock kopyasını oluşturur.
+- **@InjectMocks:** @Mock ile işaretlenmiş tüm nesneleri, test edilecek olan sınıfın içine otomatik olarak enjekte eder.
+
+Kod Örneği:
+```java
+@ExtendWith(MockitoExtension.class)
+class UserServiceTest {
+
+    @Mock
+    private UserRepository userRepository; // Bağımlılık
+
+    @InjectMocks
+    private UserService userService; // Test edilen sınıf
+
+    @Test
+    void shouldReturnUserCount() {
+        // Veri hazırlığı (Stubbing)
+        when(userRepository.count()).thenReturn(5L);
+
+        // Aksiyon
+        long count = userService.getUserCount();
+
+        // Doğrulama (Assertion)
+        assertEquals(5L, count);
+    }
+}
+```
+
+### List Interface ile Mock Alıştırmaları
+
+**Senaryo A: Farklı Dönüş Değerleri (Iterative)**
+```java
+@Test
+void listSize_MultipleReturns() {
+    List listMock = mock(List.class);
+    when(listMock.size()).thenReturn(10).thenReturn(20);
+
+    assertEquals(10, listMock.size()); // İlk çağrı
+    assertEquals(20, listMock.size()); // İkinci çağrı
+}
+```
+
+**Senaryo B: Parametre Esnekliği (Argument Matchers)**
+```java
+@Test
+void listGet_WithArgumentMatchers() {
+    List listMock = mock(List.class);
+    
+    // Herhangi bir int değeri ile çağrılırsa "Test" dön
+    when(listMock.get(anyInt())).thenReturn("Test");
+
+    assertEquals("Test", listMock.get(0));
+    assertEquals("Test", listMock.get(999));
+}
+```
+
+> **@Mock** sadece bağımlılıklar için değildir. Ancak küçük bir nüans: Eğer bir değişkeni *sadece test içinde geçici* olarak kullanacaksan mock(Class.class) metodunu; **sınıf seviyesinde** tanımlayıp *her testte taze bir mock* istersen @Mock annotasyonunu tercih etmelisin.
+
+### Mockito verify() Kullanımı
+Kısaca: "Bu metot, belirttiğim parametrelerle, şu kadar kez çalıştırıldı mı?" sorusunu sorar.
+
+```java
+@Test
+void deleteUserTest() {
+    // 1. Hazırlık (Given)
+    int userId = 1;
+
+    // 2. Aksiyon (When)
+    userService.deleteUser(userId);
+
+    // 3. Doğrulama (Verify)
+    // userRepository.deleteById(1) metodu tam olarak 1 kez çağrıldı mı?
+    verify(userRepository, times(1)).deleteById(userId);
+
+    // Diğer yaygın doğrulama örnekleri:
+    verify(userRepository, atLeastOnce()).deleteById(userId); // En az 1 kez
+    verify(userRepository, never()).save(any()); // Bu metodun HİÇ çağrılmadığını doğrular
+}
+```
+
+### Spy (Kısmi Mocking)
+@Mock ile @Spy arasındaki temel fark şudur: Mock, sınıfın tamamen boş bir kabuğunu oluşturur (metotlar hiçbir şey yapmaz). Spy ise gerçek bir nesne oluşturur; siz aksini söyleyediğiniz sürece nesnenin gerçek metotları çalışır.
+
+- Ne zaman kullanılır? Mevcut bir sınıfın davranışlarının çoğunu korumak, ama sadece bir veya iki metodunu değiştirmek (stub) istediğinizde.
+```java
+@ExtendWith(MockitoExtension.class)
+class SpyExampleTest {
+
+    @Spy
+    ArrayList<String> spyList = new ArrayList<>();
+
+    @Test
+    void testSpy() {
+        spyList.add("Merhaba");
+        spyList.add("Dünya");
+
+        // Gerçek metotlar çalıştığı için size 2 olacaktır
+        assertEquals(2, spyList.size());
+
+        // Ama istersen bir metodu "mock"layabilirsin
+        doReturn(100).when(spyList).size();
+
+        assertEquals(100, spyList.size()); // Artık gerçek metot değil, bizim verdiğimiz değer döner
+    }
+}
+```
+
+### ArgumentCaptor (Parametre Yakalayıcı)
+Bazen bir metodun çağrıldığını doğrulamak (verify) yetmez; o metoda gönderilen parametrenin içeriğini detaylıca incelemek istersiniz.
+
+- Ne zaman kullanılır? Metoda gönderilen nesne metot içinde oluşturuluyorsa veya karmaşık bir nesne gidiyorsa, bu nesnenin alanlarını (field) tek tek kontrol etmek için kullanılır.
+```java
+@ExtendWith(MockitoExtension.class)
+class ArgumentCaptorTest {
+
+    @Mock
+    private EmailService emailService;
+
+    @InjectMocks
+    private NotificationService notificationService;
+
+    @Captor
+    private ArgumentCaptor<EmailRequest> emailCaptor;
+
+    @Test
+    void testSendNotification() {
+        // Aksiyon: İçeride bir EmailRequest nesnesi oluşturulup gönderiliyor
+        notificationService.sendWelcomeEmail("test@example.com");
+
+        // Doğrulama: emailService.send() metoduna giden parametreyi yakala
+        verify(emailService).send(emailCaptor.capture());
+
+        // Yakalanan nesneyi kontrol et
+        EmailRequest capturedRequest = emailCaptor.getValue();
+        assertEquals("test@example.com", capturedRequest.getTo());
+        assertEquals("Hoş Geldiniz!", capturedRequest.getSubject());
+    }
+}
+```
+
+> **İpucu:** Spy kullanırken when(...).thenReturn(...) yerine *doReturn(...).when(...)* kullanmak daha güvenlidir. Çünkü when() içinde gerçek metot bir kez çağrılabilir ve bu bazen (eğer metot hata fırlatıyorsa) testin patlamasına neden olur.
+
+---
+
 
